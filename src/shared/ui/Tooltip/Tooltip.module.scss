@@ -1,0 +1,38 @@
+.trigger {
+  display: inline-block;
+  cursor: help;
+  border-bottom: 1px dotted #888; // Match the "summary" style from AuditPage
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tooltip {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  background: #1a1b26;
+  border: 1px solid #414868;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #a9b1d6;
+  font-size: 12px;
+  white-space: pre-wrap;
+  z-index: 9999;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  max-width: 400px;
+  line-height: 1.4;
+
+  // Arrow
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #414868 transparent transparent transparent;
+  }
+}

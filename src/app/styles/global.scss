@@ -1,0 +1,143 @@
+/* Global dark theme and reset */
+:root {
+  --bg: #0e0f12;
+  --bg-elev: #15171c;
+  --text: #e6e6e6;
+  --muted: #a8acb3;
+  --primary: #7aa2ff;
+  --primary-700: #5e82dd;
+  --success: #7ad97a;
+  --warning: #f1c40f;
+  --danger: #ff6b6b;
+  --border: #252831;
+  --card: #161820;
+}
+
+/* 6 color palettes (can be overridden by ThemeContext) */
+[data-theme="blue"] {
+  --primary: #7aa2ff;
+  --primary-700: #5e82dd;
+}
+
+[data-theme="purple"] {
+  --primary: #b388ff;
+  --primary-700: #8c6eff;
+}
+
+[data-theme="teal"] {
+  --primary: #4fd1c5;
+  --primary-700: #38b2ac;
+}
+
+[data-theme="orange"] {
+  --primary: #f6ad55;
+  --primary-700: #dd6b20;
+}
+
+[data-theme="pink"] {
+  --primary: #f687b3;
+  --primary-700: #d53f8c;
+}
+
+[data-theme="green"] {
+  --primary: #86efac;
+  --primary-700: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.btn {
+  background: var(--primary);
+  color: #0b0c10;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn:hover {
+  background: var(--primary-700);
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.input {
+  background: #0b0c12;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+/* Simple toast container */
+#toast-root {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+}
+
+.toast {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+/* Simple modal base */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  width: min(640px, 92vw);
+}

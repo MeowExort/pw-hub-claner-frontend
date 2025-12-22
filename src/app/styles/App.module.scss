@@ -1,0 +1,186 @@
+.appRoot {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.topBar {
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  color: var(--primary);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  cursor: pointer;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #0b0c10;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 0;
+    right: 0;
+    height: 12px;
+  }
+}
+
+.dropdownItem {
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.dropdownItem:hover {
+  background: #0f1117;
+}
+
+.mainMenu {
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+}
+
+.menu {
+  display: flex;
+  gap: 18px;
+  padding: 8px 0;
+}
+
+.menuItem {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: var(--text);
+}
+
+.menuItem:hover {
+  background: #0f1117;
+  border-color: var(--border);
+}
+
+.menuItemActive {
+  background: rgba(122, 162, 255, .12);
+  color: var(--primary);
+  border-color: rgba(122, 162, 255, .25);
+}
+
+.contentWrap {
+  flex: 1;
+  padding: 20px 0;
+}
+
+.pageTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0 16px;
+}
+
+.section {
+  margin-top: 16px;
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.cardCol4 {
+  grid-column: span 4;
+}
+
+.cardCol6 {
+  grid-column: span 6;
+}
+
+.cardCol8 {
+  grid-column: span 8;
+}
+
+.cardCol12 {
+  grid-column: span 12;
+}
+
+@media (max-width: 1000px) {
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Themed form controls
+.select {
+  appearance: none;
+  background: var(--bg-elev);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 28px 6px 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%237AA2FF' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+
+  &:hover {
+    border-color: rgba(122, 162, 255, .45);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(122, 162, 255, .18);
+  }
+
+  option {
+    background: var(--bg-elev);
+    color: var(--text);
+  }
+}
