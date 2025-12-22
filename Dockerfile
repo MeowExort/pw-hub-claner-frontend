@@ -12,12 +12,12 @@ ENV VITE_WS_URL=${VITE_WS_URL}
 
 # Install dependencies (use ci when lockfile exists)
 COPY package*.json ./
-RUN npm ci || npm install
+RUN pnpm ci || npm install
 
 # Copy sources and build
 COPY . .
 # Ensure production mode build (Vite defaults to production for build)
-RUN npm run build
+RUN pnpm run build
 
 # 2) Production stage using Nginx to serve static files
 FROM nginx:1.27-alpine AS runner
