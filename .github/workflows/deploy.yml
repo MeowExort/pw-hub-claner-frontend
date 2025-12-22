@@ -77,6 +77,6 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd ~/claner
-            TAG=${{ github.sha }} docker compose pull pw-hub-claner-frontend 
-            TAG=${{ github.sha }} docker compose up -d pw-hub-claner-frontend
+            cd ~/app
+            TAG=${{ github.sha }} docker compose pull claner 
+            TAG=${{ github.sha }} docker compose up -d claner
