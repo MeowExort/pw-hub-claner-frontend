@@ -10,9 +10,9 @@ ARG VITE_WS_URL=wss://api.claner.pw-hub.ru/events
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_WS_URL=${VITE_WS_URL}
 
-# Install dependencies (use ci when lockfile exists)
-COPY package*.json ./
-RUN pnpm ci || npm install
+# Install dependencies with pnpm (via Corepack)
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
 
 # Copy sources and build
 COPY . .
@@ -21,6 +21,9 @@ RUN pnpm run build
 
 # 2) Production stage using Nginx to serve static files
 FROM nginx:1.27-alpine AS runner
+
+# Copy custom nginx config for SPA routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Install curl for container healthcheck
 RUN apk add --no-cache curl
