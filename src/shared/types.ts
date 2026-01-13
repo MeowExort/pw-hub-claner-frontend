@@ -7,7 +7,7 @@ export type CharacterClass =
     | 'Страж' | 'Мистик' | 'Дух крови'
     | 'Призрак' | 'Жнец';
 
-export type ServerName = 'Центавр' | 'Фенрир' | 'Мицар';
+export type ServerName = 'Центавр' | 'Фенрир' | 'Мицар' | 'Капелла';
 
 export interface Character {
     id: string;

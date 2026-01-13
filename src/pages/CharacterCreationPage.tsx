@@ -1,11 +1,11 @@
-import React, {useState, useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {useAuth} from '@/app/providers/AuthContext';
 import {Character, CharacterClass, ServerName} from '@/shared/types';
 import {calculatePowerDetails, PowerBreakdown} from '@/shared/lib/power';
 import styles from './CharacterCreationPage.module.scss';
 
-const SERVERS: ServerName[] = ['Центавр', 'Фенрир', 'Мицар'];
+const SERVERS: ServerName[] = ['Центавр', 'Фенрир', 'Мицар', 'Капелла'];
 const CLASSES: Record<string, CharacterClass[]> = {
     'Люди': ['Воин', 'Маг', 'Стрелок'],
     'Зооморфы': ['Оборотень', 'Друид', 'Странник'],
