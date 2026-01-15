@@ -1,5 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useAppStore} from '@/shared/model/AppStore';
+import {useAuth} from '@/app/providers/AuthContext';
 import s from '@/app/styles/App.module.scss';
 import type {ClanHallStage, ClanRole, RolePermissions} from '@/shared/types';
 import {Tooltip} from '@/shared/ui/Tooltip/Tooltip';
@@ -30,12 +31,30 @@ const PERMISSION_DESCRIPTIONS: Record<string, string> = {
 
 const ROLES: ClanRole[] = ['MASTER', 'MARSHAL', 'OFFICER', 'PL', 'MEMBER'];
 
+const ROLE_HIERARCHY: Record<string, number> = {
+    MASTER: 4,
+    MARSHAL: 3,
+    OFFICER: 2,
+    PL: 1,
+    MEMBER: 0
+};
+const getRoleLevel = (r: string) => ROLE_HIERARCHY[r] ?? 0;
+
 export default function ClanSettingsPage() {
-    const {clan, updateClanSettings, hasPermission} = useAppStore();
+    const {user} = useAuth();
+    const {clan, updateClanSettings, hasPermission, getClanRoster} = useAppStore();
 
     if (!hasPermission('CAN_EDIT_SETTINGS')) {
         return <div className="card">У вас нет прав для просмотра этой страницы.</div>;
     }
+
+    const [roster, setRoster] = useState<any[]>([]);
+    useEffect(() => {
+        getClanRoster().then(setRoster);
+    }, []);
+
+    const myRole = useMemo(() => roster.find(m => m.id === user?.mainCharacterId)?.role, [roster, user]);
+    const myLevel = myRole ? getRoleLevel(myRole) : -1;
 
     const [hasChanges, setHasChanges] = useState(false);
 
@@ -154,7 +173,7 @@ export default function ClanSettingsPage() {
                     </div>
                     <div className="grid"
                          style={{gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12}}>
-                        {ROLES.map(role => {
+                        {ROLES.filter(role => getRoleLevel(role) < myLevel).map(role => {
                             const roleEntry = rolePerms.find(r => r.role === role);
                             const currentPerms = roleEntry?.permissions || [];
 

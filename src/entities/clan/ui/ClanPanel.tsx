@@ -1,10 +1,11 @@
-import React, {useMemo, useState, useEffect} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import s from '@/app/styles/Dashboard.module.scss';
 import {useAppStore} from '@/shared/model/AppStore';
 import {clanApi} from '@/shared/api';
 import {generateBannerGradient} from '@/shared/lib/color';
-import type {ClanMember, ClanEvent, CharacterClass} from '@/shared/types';
+import type {CharacterClass, ClanEvent, ClanMember} from '@/shared/types';
 import UploadProgressModal from './UploadProgressModal';
+import ReportInstructionModal from './ReportInstructionModal';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 
 const PVE_TYPES = ['CLAN_HALL', 'RHYTHM', 'FORBIDDEN_KNOWLEDGE'];
@@ -15,6 +16,8 @@ export default function ClanPanel() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [names, setNames] = useState<Record<string, { name: string; class: CharacterClass }>>({});
     const [uploadTaskId, setUploadTaskId] = useState<string | null>(null);
+    const [showInstruction, setShowInstruction] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const leadership = useMemo(() => {
         const rolesOrder: Record<string, number> = {MASTER: 0, MARSHAL: 1, OFFICER: 2, PL: 3};
@@ -93,8 +96,18 @@ export default function ClanPanel() {
         return name.slice(0, 2).toUpperCase();
     };
 
+    const handleUploadClick = () => {
+        const hideInstruction = localStorage.getItem('hide_report_instruction') === 'true';
+        if (hideInstruction) {
+            fileInputRef.current?.click();
+        } else {
+            setShowInstruction(true);
+        }
+    };
+
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || !e.target.files[0] || !clan) return;
+
         const file = e.target.files[0];
 
         try {
@@ -118,6 +131,15 @@ export default function ClanPanel() {
                     taskId={uploadTaskId}
                     clanId={clan.id}
                     onClose={() => setUploadTaskId(null)}
+                />
+            )}
+            {showInstruction && (
+                <ReportInstructionModal
+                    onClose={() => setShowInstruction(false)}
+                    onConfirm={() => {
+                        setShowInstruction(false);
+                        fileInputRef.current?.click();
+                    }}
                 />
             )}
             <button
@@ -173,7 +195,7 @@ export default function ClanPanel() {
                         </div>
                         <div className={s.statItem}>
                             <span>Участников:</span>
-                            <span>{(clan.members || []).length}/200</span>
+                            <span>{(clan.members || []).length}</span>
                         </div>
                     </div>
 
@@ -202,11 +224,43 @@ export default function ClanPanel() {
                     </div>
 
                     {hasPermission('CAN_UPLOAD_REPORTS') && (
-                        <div style={{marginTop: 20, textAlign: 'center'}}>
-                            <label className="btn primary small" style={{cursor: 'pointer', display: 'inline-block'}}>
+                        <div style={{
+                            marginTop: 20,
+                            textAlign: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                        }}>
+                            <button className="btn primary small" onClick={handleUploadClick}>
                                 📂 Загрузить отчет
-                                <input type="file" hidden onChange={handleUpload} accept=".data,.bin"/>
-                            </label>
+                            </button>
+                            <input
+                                type="file"
+                                hidden
+                                ref={fileInputRef}
+                                onChange={handleUpload}
+                                accept=".data,.bin"
+                            />
+                            <button
+                                className="btn secondary small"
+                                style={{
+                                    padding: '4px 8px',
+                                    borderRadius: '50%',
+                                    width: '24px',
+                                    height: '24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '14px',
+                                    fontWeight: 'bold',
+                                    opacity: 0.8
+                                }}
+                                onClick={() => setShowInstruction(true)}
+                                title="Инструкция по загрузке"
+                            >
+                                i
+                            </button>
                         </div>
                     )}
                 </>

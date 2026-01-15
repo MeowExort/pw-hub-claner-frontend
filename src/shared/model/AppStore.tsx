@@ -1,12 +1,12 @@
-import React, {createContext, useContext, useEffect, useMemo, useState, useCallback} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import type {
-    Clan,
-    ClanEvent,
-    ClanSettings,
     Character,
-    ClanMember,
+    CharacterClass,
+    Clan,
     ClanApplication,
-    CharacterClass
+    ClanEvent,
+    ClanMember,
+    ClanSettings
 } from '@/shared/types';
 import {clanApi, eventsApi, userApi} from '@/shared/api';
 import {useToast} from '@/app/providers/ToastContext';
@@ -166,10 +166,15 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
     }, [clan, notify, refreshAll]);
 
     const leaveClan = useCallback(async (clanId: string) => {
-        await clanApi.leaveClan(clanId);
-        notify('Вы покинули клан', 'success');
-        await refreshAll();
-    }, [notify, refreshAll]);
+        try {
+            await clanApi.leaveClan(clanId);
+            notify('Вы покинули клан', 'success');
+        } finally {
+            setClan(null);
+            setEvents([]);
+            setPermissions([]);
+        }
+    }, [notify]);
 
     const listClans = useCallback(async () => {
         return clanApi.listClans();

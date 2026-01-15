@@ -3,6 +3,7 @@ import {useNavigate, useSearchParams} from 'react-router-dom';
 import {useAuth} from '@/app/providers/AuthContext';
 import {Character, CharacterClass, ServerName} from '@/shared/types';
 import {calculatePowerDetails, PowerBreakdown} from '@/shared/lib/power';
+import PwobsIdModal from '@/entities/character/ui/PwobsIdModal';
 import styles from './CharacterCreationPage.module.scss';
 
 const SERVERS: ServerName[] = ['Центавр', 'Фенрир', 'Мицар', 'Капелла'];
@@ -216,6 +217,8 @@ export default function CharacterCreationPage() {
         }
     }, [isEdit, editId, user]);
 
+    const [showPwobsModal, setShowPwobsModal] = useState(false);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const {name, value, type} = e.target;
         setFormData(prev => ({
@@ -328,7 +331,19 @@ export default function CharacterCreationPage() {
                             </div>
 
                             <div className={`${styles.field} ${styles.fullWidth}`}>
-                                <label className={styles.label}>Ссылка на pwobs</label>
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                    <label className={styles.label}>
+                                        Ссылка на <a href="https://pwobs.com" target="_blank" rel="noopener noreferrer"
+                                                     className={styles.link}>pwobs</a>
+                                    </label>
+                                    <span
+                                        className={styles.link}
+                                        style={{fontSize: '0.8rem', cursor: 'pointer'}}
+                                        onClick={() => setShowPwobsModal(true)}
+                                    >
+                                        Персонажа нет на pwobs?
+                                    </span>
+                                </div>
                                 <input
                                     className={styles.input}
                                     name="pwobsLink"
@@ -434,6 +449,14 @@ export default function CharacterCreationPage() {
                         <button className={styles.button} type="submit" disabled={loading}>
                             {loading ? (isEdit ? 'Сохранение...' : 'Создание...') : (isEdit ? 'Сохранить изменения' : 'Создать персонажа')}
                         </button>
+
+                        {showPwobsModal && (
+                            <PwobsIdModal
+                                onClose={() => setShowPwobsModal(false)}
+                                onSelect={(link) => setFormData(prev => ({...prev, pwobsLink: link}))}
+                                initialServer={formData.server}
+                            />
+                        )}
                     </form>
                 </div>
             </div>

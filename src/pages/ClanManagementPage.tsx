@@ -1,10 +1,10 @@
-import React, {useEffect, useState, useMemo, useRef} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import styles from '@/app/styles/App.module.scss';
 import s from './ClanManagementPage.module.scss';
 import {useAppStore} from '@/shared/model/AppStore';
 import {useAuth} from '@/app/providers/AuthContext';
-import type {Character, ClanMember, CharacterClass, ClanApplication} from '@/shared/types';
+import type {Character, CharacterClass, ClanApplication, ClanMember} from '@/shared/types';
 import {calculatePowerDetails} from '@/shared/lib/power';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 
@@ -46,7 +46,7 @@ export default function ClanManagementPage() {
     const [appNames, setAppNames] = useState<Record<string, { name: string; class: CharacterClass }>>({});
     const [loading, setLoading] = useState(true);
     const [filterClass, setFilterClass] = useState<CharacterClass | 'ALL'>('ALL');
-    const [sortBy, setSortBy] = useState<'POWER' | 'NAME'>('POWER');
+    const [sortBy, setSortBy] = useState<'POWER_DESC' | 'POWER_ASC' | 'NAME_DESC' | 'NAME_ASC'>('POWER_DESC');
     const [promoteModal, setPromoteModal] = useState<{ char: RosterItem, role: string } | null>(null);
     const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
@@ -101,8 +101,12 @@ export default function ClanManagementPage() {
             list = list.filter(c => c.class === filterClass);
         }
         list.sort((a, b) => {
-            if (sortBy === 'POWER') {
+            if (sortBy === 'POWER_DESC') {
                 return calculatePowerDetails(b).total - calculatePowerDetails(a).total;
+            } else if (sortBy === 'POWER_ASC') {
+                return calculatePowerDetails(a).total - calculatePowerDetails(b).total;
+            } else if (sortBy === 'NAME_DESC') {
+                return b.name.localeCompare(a.name);
             } else {
                 return a.name.localeCompare(b.name);
             }
@@ -195,8 +199,10 @@ export default function ClanManagementPage() {
                     <div style={{display: 'flex', flexDirection: 'column', gap: 4}}>
                         <label style={{fontSize: 12, color: 'var(--muted)'}}>Сортировка</label>
                         <select className="input" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
-                            <option value="POWER">По силе (UB)</option>
-                            <option value="NAME">По имени</option>
+                            <option value="POWER_DESC">Сила персонажа (↓)</option>
+                            <option value="POWER_ASC">Сила персонажа (↑)</option>
+                            <option value="NAME_ASC">По нику (↑)</option>
+                            <option value="NAME_DESC">По нику (↓)</option>
                         </select>
                     </div>
                     <div style={{marginLeft: 'auto', alignSelf: 'end'}}>
@@ -228,7 +234,11 @@ export default function ClanManagementPage() {
                                             className="btn secondary"
                                             onClick={e => {
                                                 e.stopPropagation();
-                                                setPromoteModal({char, role: char.role});
+                                                const currentRoleLevel = getRoleLevel(char.role);
+                                                // If current role is already higher or equal to mine, I shouldn't even see the edit button
+                                                // but let's double check and provide a safe default role in modal if current is not available
+                                                const initialRole = currentRoleLevel < myLevel ? char.role : 'MEMBER';
+                                                setPromoteModal({char, role: initialRole});
                                             }}
                                             style={{
                                                 fontSize: 12,
@@ -343,30 +353,30 @@ export default function ClanManagementPage() {
                             Участник: <b>{promoteModal.char.name}</b>
                         </div>
                         <div style={{marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8}}>
-                            {['MASTER', 'MARSHAL', 'OFFICER', 'PL', 'MEMBER'].map(r => {
-                                const isDisabled = getRoleLevel(r) > myLevel;
-                                const isSelected = promoteModal.role === r;
-                                return (
-                                    <div
-                                        key={r}
-                                        onClick={() => !isDisabled && setPromoteModal({...promoteModal, role: r})}
-                                        style={{
-                                            padding: '10px 12px',
-                                            borderRadius: 8,
-                                            border: isSelected ? '1px solid #7aa2f7' : '1px solid var(--border)',
-                                            background: isSelected ? 'rgba(122, 162, 247, 0.1)' : 'var(--card)',
-                                            cursor: isDisabled ? 'not-allowed' : 'pointer',
-                                            opacity: isDisabled ? 0.5 : 1,
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center'
-                                        }}
-                                    >
-                                        <span style={{fontWeight: isSelected ? 600 : 400}}>{r}</span>
-                                        {isSelected && <span style={{color: '#7aa2f7'}}>✓</span>}
-                                    </div>
-                                );
-                            })}
+                            {['MASTER', 'MARSHAL', 'OFFICER', 'PL', 'MEMBER']
+                                .filter(r => getRoleLevel(r) < myLevel)
+                                .map(r => {
+                                    const isSelected = promoteModal.role === r;
+                                    return (
+                                        <div
+                                            key={r}
+                                            onClick={() => setPromoteModal({...promoteModal, role: r})}
+                                            style={{
+                                                padding: '10px 12px',
+                                                borderRadius: 8,
+                                                border: isSelected ? '1px solid #7aa2f7' : '1px solid var(--border)',
+                                                background: isSelected ? 'rgba(122, 162, 247, 0.1)' : 'var(--card)',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            <span style={{fontWeight: isSelected ? 600 : 400}}>{r}</span>
+                                            {isSelected && <span style={{color: '#7aa2f7'}}>✓</span>}
+                                        </div>
+                                    );
+                                })}
                         </div>
                         <div style={{display: 'flex', gap: 8, justifyContent: 'flex-end'}}>
                             <button className="btn secondary" onClick={() => setPromoteModal(null)}

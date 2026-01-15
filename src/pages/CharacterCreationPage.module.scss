@@ -92,3 +92,14 @@
   font-size: 0.8rem;
   margin-top: 0.25rem;
 }
+
+.link {
+  color: #7aa2f7;
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #89ddff;
+    text-decoration: underline;
+  }
+}
