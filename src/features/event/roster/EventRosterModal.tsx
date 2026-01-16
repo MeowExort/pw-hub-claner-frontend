@@ -426,61 +426,65 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                             <div style={{
                                 overflowY: 'auto',
                                 flex: 1,
-                                display: 'flex',
-                                flexWrap: 'wrap',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
                                 gap: 2,
                                 alignContent: 'flex-start'
                             }}>
                                 {availableChars.map(id => {
                                     const status = ev.participants.find(p => p.characterId === id)?.status;
                                     let statusColor = 'transparent';
-                                    let statusTitle = 'Не ответил';
                                     let statusIcon = null;
 
                                     if (status === 'GOING') {
                                         statusColor = '#4fd1c5';
-                                        statusTitle = 'Пойдет';
                                         statusIcon = <span style={{color: statusColor, fontWeight: 'bold'}}>✓</span>;
                                     } else if (status === 'NOT_GOING') {
                                         statusColor = '#f87171';
-                                        statusTitle = 'Пас';
                                         statusIcon = <span style={{color: statusColor, fontWeight: 'bold'}}>✕</span>;
                                     } else if (status === 'UNDECIDED') {
                                         statusColor = '#fbbf24';
-                                        statusTitle = 'Думает';
                                         statusIcon = <span style={{color: statusColor, fontWeight: 'bold'}}>?</span>;
                                     }
 
-                                    return (
+                                    const charData = rosterMap[id];
+                                    const content = (
                                         <div
-                                            key={id}
                                             className="card"
                                             draggable={canEdit}
                                             onDragStart={(e) => onDragStartChar(e, id)}
-                                            title={`${rosterMap[id]?.name} (${statusTitle})`}
                                             style={{
-                                                padding: '2px 8px',
-                                                cursor: 'grab',
-                                                background: '#24283b',
+                                                padding: '2px 6px',
                                                 display: 'flex',
+                                                justifyContent: 'space-between',
                                                 alignItems: 'center',
-                                                borderLeft: status ? `3px solid ${statusColor}` : '3px solid transparent',
+                                                background: '#24283b',
+                                                borderLeft: status ? `3px solid ${statusColor}` : 'none',
+                                                cursor: 'grab',
                                                 fontSize: '0.8rem'
                                             }}
                                         >
-                                            {status && (
-                                                <div style={{
-                                                    marginRight: 6,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    width: 14,
-                                                    justifyContent: 'center'
-                                                }}>
-                                                    {statusIcon}
-                                                </div>
-                                            )}
-                                            <ClassIcon cls={rosterMap[id]?.class} size={12}/>
-                                            <span style={{marginLeft: 6}}>{rosterMap[id]?.name || id}</span>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden'}}>
+                                                {statusIcon && (
+                                                    <div style={{
+                                                        width: 14,
+                                                        display: 'flex',
+                                                        justifyContent: 'center'
+                                                    }}>{statusIcon}</div>
+                                                )}
+                                                <ClassIcon cls={charData?.class} size={14}/>
+                                                <span style={{
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}>{charData?.name || id}</span>
+                                            </div>
+                                        </div>
+                                    );
+
+                                    return (
+                                        <div key={id}>
+                                            {charData ? <CharacterTooltip character={charData}>{content}</CharacterTooltip> : content}
                                         </div>
                                     );
                                 })}
