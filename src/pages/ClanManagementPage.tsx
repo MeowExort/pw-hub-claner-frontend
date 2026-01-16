@@ -48,7 +48,8 @@ export default function ClanManagementPage() {
     const [applications, setApplications] = useState<ClanApplication[]>([]);
     const [loading, setLoading] = useState(true);
     const [filterClass, setFilterClass] = useState<CharacterClass | 'ALL'>('ALL');
-    const [sortBy, setSortBy] = useState<'POWER_DESC' | 'POWER_ASC' | 'NAME_DESC' | 'NAME_ASC'>('POWER_DESC');
+    const [searchName, setSearchName] = useState('');
+    const [sortBy, setSortBy] = useState<'POWER_DESC' | 'POWER_ASC' | 'NAME_DESC' | 'NAME_ASC' | 'ROLE_DESC' | 'ROLE_ASC'>('POWER_DESC');
     const [promoteModal, setPromoteModal] = useState<{ char: RosterItem, role: string } | null>(null);
     const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
@@ -95,6 +96,10 @@ export default function ClanManagementPage() {
         if (filterClass !== 'ALL') {
             list = list.filter(c => c.class === filterClass);
         }
+        if (searchName.trim()) {
+            const query = searchName.toLowerCase();
+            list = list.filter(c => c.name.toLowerCase().includes(query));
+        }
         list.sort((a, b) => {
             if (sortBy === 'POWER_DESC') {
                 return calculatePowerDetails(b).total - calculatePowerDetails(a).total;
@@ -102,12 +107,22 @@ export default function ClanManagementPage() {
                 return calculatePowerDetails(a).total - calculatePowerDetails(b).total;
             } else if (sortBy === 'NAME_DESC') {
                 return b.name.localeCompare(a.name);
-            } else {
+            } else if (sortBy === 'NAME_ASC') {
                 return a.name.localeCompare(b.name);
+            } else if (sortBy === 'ROLE_DESC') {
+                const diff = getRoleLevel(b.role) - getRoleLevel(a.role);
+                if (diff !== 0) return diff;
+                return calculatePowerDetails(b).total - calculatePowerDetails(a).total;
+            } else if (sortBy === 'ROLE_ASC') {
+                const diff = getRoleLevel(a.role) - getRoleLevel(b.role);
+                if (diff !== 0) return diff;
+                return calculatePowerDetails(b).total - calculatePowerDetails(a).total;
+            } else {
+                return 0;
             }
         });
         return list;
-    }, [roster, filterClass, sortBy]);
+    }, [roster, filterClass, searchName, sortBy]);
 
     if (!clan) return null;
 
@@ -237,6 +252,15 @@ export default function ClanManagementPage() {
 
             <div className="card" style={{marginBottom: 16}}>
                 <div style={{display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 200px'}}>
+                        <label style={{fontSize: 12, color: 'var(--muted)'}}>Поиск по нику</label>
+                        <input 
+                            className="input" 
+                            placeholder="Введите ник..." 
+                            value={searchName} 
+                            onChange={e => setSearchName(e.target.value)}
+                        />
+                    </div>
                     <div style={{display: 'flex', flexDirection: 'column', gap: 4}}>
                         <label style={{fontSize: 12, color: 'var(--muted)'}}>Класс</label>
                         <select className="input" value={filterClass}
@@ -252,6 +276,8 @@ export default function ClanManagementPage() {
                             <option value="POWER_ASC">Сила персонажа (↑)</option>
                             <option value="NAME_ASC">По нику (↑)</option>
                             <option value="NAME_DESC">По нику (↓)</option>
+                            <option value="ROLE_DESC">По роли (↓)</option>
+                            <option value="ROLE_ASC">По роли (↑)</option>
                         </select>
                     </div>
                     <div style={{marginLeft: 'auto', alignSelf: 'end'}}>

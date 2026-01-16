@@ -324,7 +324,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                             }}>
                                 <div style={{fontWeight: 600}}>Доступные ({availableChars.length})</div>
                             </div>
-                            <div style={{marginBottom: 8, fontSize: 13}}>
+                            <div style={{marginBottom: 4, fontSize: 13, display: 'flex', gap: 8, alignItems: 'center'}}>
                                 <label style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -334,17 +334,49 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                 }}>
                                     <input type="checkbox" checked={includeAllRoster}
                                            onChange={e => setIncludeAllRoster(e.target.checked)}/>
-                                    Включить весь состав
+                                    Весь состав
                                     {loadingRoster &&
-                                        <span style={{fontSize: 12, color: 'var(--muted)'}}>(загрузка...)</span>}
+                                        <span style={{fontSize: 11, color: 'var(--muted)'}}>(...)</span>}
                                 </label>
+                                {canEdit && (
+                                    <button 
+                                        className="btn secondary small" 
+                                        onClick={() => {
+                                            const allIds = availableChars;
+                                            if (allIds.length === 0) return;
+                                            
+                                            modifySquads(prev => {
+                                                let currentSquads = [...prev];
+                                                allIds.forEach(id => {
+                                                    // Find squad with < 12 members
+                                                    let targetSquad = currentSquads.find(s => s.members.length < 12);
+                                                    if (!targetSquad) {
+                                                        const newSquad: Squad = {
+                                                            id: uid('sq_'),
+                                                            name: `Отряд ${currentSquads.length + 1}`,
+                                                            leaderId: '',
+                                                            members: []
+                                                        };
+                                                        currentSquads.push(newSquad);
+                                                        targetSquad = newSquad;
+                                                    }
+                                                    targetSquad.members.push(id);
+                                                });
+                                                return currentSquads;
+                                            });
+                                        }}
+                                        style={{padding: '2px 6px', fontSize: '11px'}}
+                                    >
+                                        Раскидать всех
+                                    </button>
+                                )}
                             </div>
                             <div style={{
                                 overflowY: 'auto',
                                 flex: 1,
                                 display: 'flex',
                                 flexWrap: 'wrap',
-                                gap: 8,
+                                gap: 4,
                                 alignContent: 'flex-start'
                             }}>
                                 {availableChars.map(id => {
@@ -375,12 +407,13 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                             onDragStart={(e) => onDragStartChar(e, id)}
                                             title={`${rosterMap[id]?.name} (${statusTitle})`}
                                             style={{
-                                                padding: '6px 10px',
+                                                padding: '4px 8px',
                                                 cursor: 'grab',
                                                 background: '#24283b',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                borderLeft: status ? `3px solid ${statusColor}` : '3px solid transparent'
+                                                borderLeft: status ? `3px solid ${statusColor}` : '3px solid transparent',
+                                                fontSize: '0.85rem'
                                             }}
                                         >
                                             {status && (
@@ -394,7 +427,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                     {statusIcon}
                                                 </div>
                                             )}
-                                            <ClassIcon cls={rosterMap[id]?.class} size={14}/>
+                                            <ClassIcon cls={rosterMap[id]?.class} size={12}/>
                                             <span style={{marginLeft: 6}}>{rosterMap[id]?.name || id}</span>
                                         </div>
                                     );
@@ -413,8 +446,8 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                         <div style={{
                             overflowY: 'auto',
                             display: 'grid',
-                            gridTemplateColumns: isMySquadView ? '1fr' : 'repeat(auto-fill, minmax(250px, 1fr))',
-                            gap: 12,
+                            gridTemplateColumns: isMySquadView ? '1fr' : 'repeat(auto-fill, minmax(210px, 1fr))',
+                            gap: 8,
                             alignContent: 'flex-start'
                         }}>
                             {displayedSquads.map(s => (
@@ -429,14 +462,19 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                         marginBottom: 8
                                     }}>
                                         {canEdit ? (
-                                            <input
-                                                className="input"
-                                                value={s.name}
-                                                onChange={(e) => renameSquad(s.id, e.target.value)}
-                                                style={{fontWeight: 600, padding: '2px 6px', width: '100%'}}
-                                            />
+                                            <div style={{display: 'flex', alignItems: 'center', gap: 6, width: '100%'}}>
+                                                <input
+                                                    className="input"
+                                                    value={s.name}
+                                                    onChange={(e) => renameSquad(s.id, e.target.value)}
+                                                    style={{fontWeight: 600, padding: '2px 6px', flex: 1}}
+                                                />
+                                                <span style={{fontSize: '0.8rem', color: 'var(--muted)', whiteSpace: 'nowrap'}}>
+                                                    {s.members.length}/12
+                                                </span>
+                                            </div>
                                         ) : (
-                                            <div style={{fontWeight: 600}}>{s.name}</div>
+                                            <div style={{fontWeight: 600}}>{s.name} ({s.members.length})</div>
                                         )}
                                         <div style={{display: 'flex', gap: 4, alignItems: 'center'}}>
                                             {s.leaderId && myCharacterIds.includes(s.leaderId) && (
@@ -458,7 +496,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                             )}
                                         </div>
                                     </div>
-                                    <div style={{display: 'grid', gap: 6}}>
+                                    <div style={{display: 'grid', gap: 4}}>
                                         {s.members.map((m, idx) => {
                                             const isLeader = s.leaderId === m;
                                             const charData = rosterMap[m];
@@ -488,27 +526,39 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                     onDragStart={(e) => onDragStartChar(e, m)}
                                                     onContextMenu={(e) => handleContextMenu(e, s.id, m)}
                                                     style={{
-                                                        padding: '6px 8px',
+                                                        padding: '4px 6px',
                                                         display: 'flex',
                                                         justifyContent: 'space-between',
                                                         alignItems: 'center',
                                                         background: isLeader ? 'rgba(122, 162, 247, 0.15)' : '#24283b',
                                                         border: isLeader ? '1px solid rgba(122, 162, 247, 0.3)' : 'none',
                                                         borderLeft: status ? `3px solid ${statusColor}` : isLeader ? '1px solid rgba(122, 162, 247, 0.3)' : 'none',
-                                                        cursor: 'default'
+                                                        cursor: 'default',
+                                                        fontSize: '0.85rem'
                                                     }}
                                                 >
                                                     <div style={{display: 'flex', alignItems: 'center', gap: 6}}>
-                                                        {isLeader && <span>👑</span>}
-                                                        {(!isLeader && idx === 0 && s.leaderId === '') &&
-                                                            <span style={{opacity: 0.5}}>1.</span>}
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            color: 'var(--muted)',
+                                                            width: '18px',
+                                                            textAlign: 'right'
+                                                        }}>
+                                                            {idx + 1}.
+                                                        </span>
+                                                        {isLeader && <span title="Лидер отряда">👑</span>}
                                                         {statusIcon && <div style={{
                                                             width: 14,
                                                             display: 'flex',
                                                             justifyContent: 'center'
                                                         }}>{statusIcon}</div>}
-                                                        <ClassIcon cls={charData?.class} size={16}/>
-                                                        <span>{displayName}</span>
+                                                        <ClassIcon cls={charData?.class} size={14}/>
+                                                        <span style={{
+                                                            fontWeight: isLeader ? 600 : 400,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap'
+                                                        }}>{displayName}</span>
                                                     </div>
                                                     {canEdit && (
                                                         <button
