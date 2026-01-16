@@ -461,7 +461,9 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                 background: '#24283b',
                                                 borderLeft: status ? `3px solid ${statusColor}` : 'none',
                                                 cursor: 'grab',
-                                                fontSize: '0.8rem'
+                                                fontSize: '0.8rem',
+                                                height: '28px',
+                                                boxSizing: 'border-box'
                                             }}
                                         >
                                             <div style={{display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden'}}>
@@ -479,6 +481,8 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                     whiteSpace: 'nowrap'
                                                 }}>{charData?.name || id}</span>
                                             </div>
+                                            {/* Пустой блок для выравнивания по высоте с карточками в отряде */}
+                                            {canEdit && <div style={{width: 20, flexShrink: 0}}></div>}
                                         </div>
                                     );
 
@@ -629,15 +633,18 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                         border: isLeader ? '1px solid rgba(122, 162, 247, 0.3)' : 'none',
                                                         borderLeft: status ? `3px solid ${statusColor}` : isLeader ? '1px solid rgba(122, 162, 247, 0.3)' : 'none',
                                                         cursor: 'default',
-                                                        fontSize: '0.8rem'
+                                                        fontSize: '0.8rem',
+                                                        height: '28px',
+                                                        boxSizing: 'border-box'
                                                     }}
                                                 >
-                                                    <div style={{display: 'flex', alignItems: 'center', gap: 6}}>
+                                                    <div style={{display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden'}}>
                                                         <span style={{
                                                             fontSize: '0.75rem',
                                                             color: 'var(--muted)',
                                                             width: '18px',
-                                                            textAlign: 'right'
+                                                            textAlign: 'right',
+                                                            flexShrink: 0
                                                         }}>
                                                             {idx + 1}.
                                                         </span>
@@ -645,7 +652,8 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                         {statusIcon && <div style={{
                                                             width: 14,
                                                             display: 'flex',
-                                                            justifyContent: 'center'
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0
                                                         }}>{statusIcon}</div>}
                                                         <ClassIcon cls={charData?.class} size={14}/>
                                                         <span style={{
@@ -660,6 +668,15 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                             className="btn secondary small"
                                                             onClick={() => removeFromSquad(s.id, m)}
                                                             title="Убрать из отряда"
+                                                            style={{
+                                                                padding: 0,
+                                                                width: 20,
+                                                                height: 20,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                flexShrink: 0
+                                                            }}
                                                         >
                                                             ×
                                                         </button>

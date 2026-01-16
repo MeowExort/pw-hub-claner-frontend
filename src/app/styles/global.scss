@@ -84,6 +84,12 @@ a {
   border: 1px solid var(--border);
 }
 
+.btn.small {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
 .input {
   background: #0b0c12;
   border: 1px solid var(--border);
