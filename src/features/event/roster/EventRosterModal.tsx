@@ -290,6 +290,15 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
         return squadsWithMembers.reduce((acc, s) => acc + s.totalPower, 0) / squadsWithMembers.length;
     }, [squadStats, localSquads]);
 
+    const globalStats = useMemo(() => {
+        const going = ev.participants.filter(p => p.status === 'GOING').length;
+        const notGoing = ev.participants.filter(p => p.status === 'NOT_GOING').length;
+        const undecided = ev.participants.filter(p => p.status === 'UNDECIDED').length;
+        const totalSquads = localSquads.length;
+        
+        return { going, notGoing, undecided, totalSquads, avgPower };
+    }, [ev.participants, localSquads, avgPower]);
+
     return (
         <div className="modal-backdrop" onClick={onClose}
              style={{alignItems: 'center', justifyContent: 'center', display: 'flex'}}>
@@ -321,7 +330,23 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                             fontWeight: 400
                         }}>(Синхронизация...)</span>}
                     </div>
-                    <div style={{display: 'flex', gap: 12}}>
+                    <div style={{display: 'flex', gap: 12, alignItems: 'center'}}>
+                        <div style={{
+                            display: 'flex',
+                            gap: 16,
+                            fontSize: '0.85rem',
+                            color: 'var(--muted)',
+                            background: 'rgba(0,0,0,0.2)',
+                            padding: '6px 12px',
+                            borderRadius: 6,
+                            border: '1px solid var(--border)'
+                        }}>
+                            <div title="Буду"><span style={{color: '#4fd1c5', fontWeight: 600}}>✓</span> {globalStats.going}</div>
+                            <div title="Не буду"><span style={{color: '#f87171', fontWeight: 600}}>✕</span> {globalStats.notGoing}</div>
+                            <div title="Без отметок"><span style={{color: '#fbbf24', fontWeight: 600}}>?</span> {globalStats.undecided}</div>
+                            <div style={{borderLeft: '1px solid #333', paddingLeft: 12}}>Отрядов: <b>{globalStats.totalSquads}</b></div>
+                            <div>Средняя сила: <b>{Math.round(globalStats.avgPower).toLocaleString('ru-RU')}</b></div>
+                        </div>
                         {canEdit && <button className="btn secondary" onClick={addSquad}>+ Отряд</button>}
                         <button className="btn secondary" onClick={onClose}>Закрыть</button>
                     </div>
@@ -473,9 +498,10 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                         <div style={{
                             overflowY: 'auto',
                             display: 'grid',
-                            gridTemplateColumns: isMySquadView ? '1fr' : 'repeat(auto-fill, minmax(210px, 1fr))',
-                            gap: 4,
-                            alignContent: 'flex-start'
+                            gridTemplateColumns: isMySquadView ? '1fr' : 'repeat(auto-fill, minmax(230px, 1fr))',
+                            gap: 12,
+                            alignContent: 'flex-start',
+                            padding: 4
                         }}>
                             {displayedSquads.map(s => {
                                 const stats = squadStats.find(st => st.id === s.id);
@@ -490,8 +516,9 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                     }} style={{
                                         height: 'fit-content',
                                         overflow: 'visible',
-                                        border: isStrong ? '1px solid #f6ad55' : isWeak ? '1px solid #7aa2ff' : undefined,
-                                        boxShadow: isStrong ? '0 0 10px rgba(246, 173, 85, 0.2)' : undefined
+                                        border: noSupport ? '1px solid #ff6b6b' : isStrong ? '1px solid #f6ad55' : isWeak ? '1px solid #7aa2ff' : undefined,
+                                        boxShadow: noSupport ? '0 0 8px rgba(255, 107, 107, 0.2)' : isStrong ? '0 0 10px rgba(246, 173, 85, 0.2)' : undefined,
+                                        padding: '10px'
                                     }}>
                                         <div style={{
                                             display: 'flex',
@@ -544,15 +571,17 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                 gap: 8,
                                                 marginBottom: 8,
                                                 fontSize: '0.75rem',
-                                                flexWrap: 'wrap'
+                                                flexWrap: 'nowrap',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between'
                                             }}>
-                                                <div style={{color: '#ff9e64', fontWeight: 600}}>
+                                                <div style={{color: '#ff9e64', fontWeight: 600, display: 'flex', alignItems: 'center'}}>
                                                     Сила: {stats?.totalPower.toLocaleString('ru-RU')}
                                                     {isStrong && <span title="Слишком сильный отряд" style={{marginLeft: 4}}>🔥</span>}
                                                     {isWeak && <span title="Слишком слабый отряд" style={{marginLeft: 4}}>❄️</span>}
                                                 </div>
                                                 {noSupport && (
-                                                    <div style={{color: '#f87171', fontWeight: 600}} title="Нет Жреца или Мистика">
+                                                    <div style={{color: '#f87171', fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap'}} title="Нет Жреца или Мистика">
                                                         ⚠️ Без саппорта
                                                     </div>
                                                 )}
