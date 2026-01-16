@@ -8,6 +8,7 @@ import {socket} from '@/shared/api/socket';
 import {useAuth} from '@/app/providers/AuthContext';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 import {addMemberToSquad} from './rosterUtils';
+import {calculateCharacterPower} from '@/shared/lib/power';
 
 export default function EventRosterModal({eventId, onClose}: { eventId: string; onClose: () => void }) {
     const {events, hasPermission, getClanRoster} = useAppStore();
@@ -110,11 +111,11 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
 
         let candidates: string[] = [];
         if (includeAllRoster) {
-            const pIds = (ev?.participants ?? []).map(p => p.characterId);
-            const rIds = Object.keys(rosterMap);
-            candidates = Array.from(new Set([...pIds, ...rIds]));
+            candidates = Object.keys(rosterMap);
         } else {
-            candidates = (ev?.participants ?? []).map(p => p.characterId);
+            candidates = (ev?.participants ?? [])
+                .map(p => p.characterId)
+                .filter(id => rosterMap[id]); // Only those still in clan
         }
 
         const unassigned = candidates.filter(id => !assigned.has(id));
@@ -263,6 +264,32 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
         return localSquads.filter(s => s.members.some(m => myCharacterIds.includes(m)));
     }, [isMySquadView, localSquads, myCharacterIds]);
 
+    const squadStats = useMemo(() => {
+        return localSquads.map(s => {
+            let totalPower = 0;
+            let hasSupport = false;
+            s.members.forEach(mId => {
+                const char = rosterMap[mId];
+                if (char) {
+                    totalPower += calculateCharacterPower(char);
+                    if (char.class === 'Жрец' || char.class === 'Мистик') {
+                        hasSupport = true;
+                    }
+                }
+            });
+            return {id: s.id, totalPower, hasSupport};
+        });
+    }, [localSquads, rosterMap]);
+
+    const avgPower = useMemo(() => {
+        const squadsWithMembers = squadStats.filter(s => {
+            const squad = localSquads.find(ls => ls.id === s.id);
+            return squad && squad.members.length > 0;
+        });
+        if (squadsWithMembers.length === 0) return 0;
+        return squadsWithMembers.reduce((acc, s) => acc + s.totalPower, 0) / squadsWithMembers.length;
+    }, [squadStats, localSquads]);
+
     return (
         <div className="modal-backdrop" onClick={onClose}
              style={{alignItems: 'center', justifyContent: 'center', display: 'flex'}}>
@@ -348,8 +375,8 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                             modifySquads(prev => {
                                                 let currentSquads = [...prev];
                                                 allIds.forEach(id => {
-                                                    // Find squad with < 12 members
-                                                    let targetSquad = currentSquads.find(s => s.members.length < 12);
+                                                    // Find squad with < 10 members
+                                                    let targetSquad = currentSquads.find(s => s.members.length < 10);
                                                     if (!targetSquad) {
                                                         const newSquad: Squad = {
                                                             id: uid('sq_'),
@@ -376,7 +403,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                 flex: 1,
                                 display: 'flex',
                                 flexWrap: 'wrap',
-                                gap: 4,
+                                gap: 2,
                                 alignContent: 'flex-start'
                             }}>
                                 {availableChars.map(id => {
@@ -407,13 +434,13 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                             onDragStart={(e) => onDragStartChar(e, id)}
                                             title={`${rosterMap[id]?.name} (${statusTitle})`}
                                             style={{
-                                                padding: '4px 8px',
+                                                padding: '2px 8px',
                                                 cursor: 'grab',
                                                 background: '#24283b',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 borderLeft: status ? `3px solid ${statusColor}` : '3px solid transparent',
-                                                fontSize: '0.85rem'
+                                                fontSize: '0.8rem'
                                             }}
                                         >
                                             {status && (
@@ -447,56 +474,91 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                             overflowY: 'auto',
                             display: 'grid',
                             gridTemplateColumns: isMySquadView ? '1fr' : 'repeat(auto-fill, minmax(210px, 1fr))',
-                            gap: 8,
+                            gap: 4,
                             alignContent: 'flex-start'
                         }}>
-                            {displayedSquads.map(s => (
-                                <div key={s.id} className="card" onDragOver={onDragOver} onDrop={e => {
-                                    e.stopPropagation();
-                                    onDropToSquad(s.id, e.dataTransfer.getData('text/plain'));
-                                }} style={{height: 'fit-content', overflow: 'visible'}}>
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        marginBottom: 8
+                            {displayedSquads.map(s => {
+                                const stats = squadStats.find(st => st.id === s.id);
+                                const isStrong = stats && avgPower > 0 && stats.totalPower > avgPower * 1.2;
+                                const isWeak = stats && avgPower > 0 && s.members.length > 0 && stats.totalPower < avgPower * 0.8;
+                                const noSupport = stats && s.members.length > 0 && !stats.hasSupport;
+
+                                return (
+                                    <div key={s.id} className="card" onDragOver={onDragOver} onDrop={e => {
+                                        e.stopPropagation();
+                                        onDropToSquad(s.id, e.dataTransfer.getData('text/plain'));
+                                    }} style={{
+                                        height: 'fit-content',
+                                        overflow: 'visible',
+                                        border: isStrong ? '1px solid #f6ad55' : isWeak ? '1px solid #7aa2ff' : undefined,
+                                        boxShadow: isStrong ? '0 0 10px rgba(246, 173, 85, 0.2)' : undefined
                                     }}>
-                                        {canEdit ? (
-                                            <div style={{display: 'flex', alignItems: 'center', gap: 6, width: '100%'}}>
-                                                <input
-                                                    className="input"
-                                                    value={s.name}
-                                                    onChange={(e) => renameSquad(s.id, e.target.value)}
-                                                    style={{fontWeight: 600, padding: '2px 6px', flex: 1}}
-                                                />
-                                                <span style={{fontSize: '0.8rem', color: 'var(--muted)', whiteSpace: 'nowrap'}}>
-                                                    {s.members.length}/12
-                                                </span>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            marginBottom: 8
+                                        }}>
+                                            {canEdit ? (
+                                                <div style={{display: 'flex', alignItems: 'center', gap: 6, width: '100%'}}>
+                                                    <input
+                                                        className="input"
+                                                        value={s.name}
+                                                        onChange={(e) => renameSquad(s.id, e.target.value)}
+                                                        style={{fontWeight: 600, padding: '2px 6px', flex: 1}}
+                                                    />
+                                                    <span style={{
+                                                        fontSize: '0.8rem',
+                                                        color: 'var(--muted)',
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        {s.members.length}/10
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div style={{fontWeight: 600}}>{s.name} ({s.members.length})</div>
+                                            )}
+                                            <div style={{display: 'flex', gap: 4, alignItems: 'center'}}>
+                                                {s.leaderId && myCharacterIds.includes(s.leaderId) && (
+                                                    <button
+                                                        className="btn secondary small"
+                                                        onClick={() => copySquad(s)}
+                                                        title="Скопировать состав"
+                                                    >
+                                                        📋
+                                                    </button>
+                                                )}
+                                                {canEdit && (
+                                                    <button
+                                                        className="btn secondary small"
+                                                        onClick={() => modifySquads(prev => prev.filter(x => x.id !== s.id))}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                )}
                                             </div>
-                                        ) : (
-                                            <div style={{fontWeight: 600}}>{s.name} ({s.members.length})</div>
-                                        )}
-                                        <div style={{display: 'flex', gap: 4, alignItems: 'center'}}>
-                                            {s.leaderId && myCharacterIds.includes(s.leaderId) && (
-                                                <button 
-                                                    className="btn secondary small" 
-                                                    onClick={() => copySquad(s)}
-                                                    title="Скопировать состав"
-                                                >
-                                                    📋
-                                                </button>
-                                            )}
-                                            {canEdit && (
-                                                <button 
-                                                    className="btn secondary small"
-                                                    onClick={() => modifySquads(prev => prev.filter(x => x.id !== s.id))}
-                                                >
-                                                    ×
-                                                </button>
-                                            )}
                                         </div>
-                                    </div>
-                                    <div style={{display: 'grid', gap: 4}}>
+                                        {s.members.length > 0 && (
+                                            <div style={{
+                                                display: 'flex',
+                                                gap: 8,
+                                                marginBottom: 8,
+                                                fontSize: '0.75rem',
+                                                flexWrap: 'wrap'
+                                            }}>
+                                                <div style={{color: '#ff9e64', fontWeight: 600}}>
+                                                    Сила: {stats?.totalPower.toLocaleString('ru-RU')}
+                                                    {isStrong && <span title="Слишком сильный отряд" style={{marginLeft: 4}}>🔥</span>}
+                                                    {isWeak && <span title="Слишком слабый отряд" style={{marginLeft: 4}}>❄️</span>}
+                                                </div>
+                                                {noSupport && (
+                                                    <div style={{color: '#f87171', fontWeight: 600}} title="Нет Жреца или Мистика">
+                                                        ⚠️ Без саппорта
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        <div style={{display: 'grid', gap: 2}}>
                                         {s.members.map((m, idx) => {
                                             const isLeader = s.leaderId === m;
                                             const charData = rosterMap[m];
@@ -526,7 +588,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                     onDragStart={(e) => onDragStartChar(e, m)}
                                                     onContextMenu={(e) => handleContextMenu(e, s.id, m)}
                                                     style={{
-                                                        padding: '4px 6px',
+                                                        padding: '2px 6px',
                                                         display: 'flex',
                                                         justifyContent: 'space-between',
                                                         alignItems: 'center',
@@ -534,7 +596,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                         border: isLeader ? '1px solid rgba(122, 162, 247, 0.3)' : 'none',
                                                         borderLeft: status ? `3px solid ${statusColor}` : isLeader ? '1px solid rgba(122, 162, 247, 0.3)' : 'none',
                                                         cursor: 'default',
-                                                        fontSize: '0.85rem'
+                                                        fontSize: '0.8rem'
                                                     }}
                                                 >
                                                     <div style={{display: 'flex', alignItems: 'center', gap: 6}}>
@@ -587,7 +649,8 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                         }}>{canEdit ? 'Перетащите сюда' : 'Пусто'}</div>}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                             {canEdit && (
                                 <div
                                     className="card"
