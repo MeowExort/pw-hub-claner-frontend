@@ -73,6 +73,9 @@ export default function ClanSettingsPage() {
 
     const [rolePerms, setRolePerms] = useState<RolePermissions[]>([]);
 
+    const [tgGroupId, setTgGroupId] = useState('');
+    const [tgThreadId, setTgThreadId] = useState('');
+
     // Init from clan settings
     useEffect(() => {
         if (hasChanges) return;
@@ -97,6 +100,9 @@ export default function ClanSettingsPage() {
             // Merge with default structure if needed, but for now just copy
             setRolePerms(perms);
 
+            setTgGroupId(clan.telegramGroupId || '');
+            setTgThreadId(clan.telegramThreadId || '');
+
             setHasChanges(false);
         }
     }, [clan, hasChanges]);
@@ -105,6 +111,8 @@ export default function ClanSettingsPage() {
         await updateClanSettings({
             pvpDefaultRallyOffsetMinutes: pvpOffset,
             rolePermissions: rolePerms,
+            telegramGroupId: tgGroupId,
+            telegramThreadId: tgThreadId,
             obligations: {
                 rhythmRequired,
                 forbiddenKnowledge: {
@@ -369,6 +377,40 @@ export default function ClanSettingsPage() {
                             Событие показывается в "Моей активности" только при зачёте хотя бы 1 этапа.
                         </div>
                     )}
+                </div>
+
+                {/* Telegram */}
+                <div className="card">
+                    <div style={{
+                        fontWeight: 700,
+                        marginBottom: 12,
+                        borderBottom: '1px solid var(--border)',
+                        paddingBottom: 8
+                    }}>📱 Telegram Интеграция
+                    </div>
+                    <div style={{display: 'grid', gap: 12}}>
+                        <div>
+                            <label style={{fontSize: 12, display: 'block', marginBottom: 4}}>ID Группы:</label>
+                            <input 
+                                className="input" 
+                                value={tgGroupId} 
+                                onChange={e => handle(setTgGroupId, e.target.value)}
+                                placeholder="-100..."
+                            />
+                        </div>
+                        <div>
+                            <label style={{fontSize: 12, display: 'block', marginBottom: 4}}>ID Топика (для форумов):</label>
+                            <input 
+                                className="input" 
+                                value={tgThreadId} 
+                                onChange={e => handle(setTgThreadId, e.target.value)}
+                                placeholder="123"
+                            />
+                        </div>
+                        <div style={{fontSize: 12, color: 'var(--muted)'}}>
+                            Добавьте бота в группу, сделайте его админом и напишите <code>/setup_claner</code>, чтобы узнать эти данные.
+                        </div>
+                    </div>
                 </div>
 
             </div>

@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import s from '@/app/styles/Dashboard.module.scss';
 import {useAppStore} from '@/shared/model/AppStore';
+import {useToast} from '@/app/providers/ToastContext';
 import {clanApi} from '@/shared/api';
 import {generateBannerGradient} from '@/shared/lib/color';
 import type {CharacterClass, ClanEvent, ClanMember} from '@/shared/types';
@@ -13,6 +14,7 @@ const PVP_TYPES = ['MTV', 'GVG', 'SADEMAN'];
 
 export default function ClanPanel() {
     const {clan, events, resolveCharacterNames, hasPermission} = useAppStore();
+    const {notify} = useToast();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [names, setNames] = useState<Record<string, { name: string; class: CharacterClass }>>({});
     const [uploadTaskId, setUploadTaskId] = useState<string | null>(null);
@@ -115,11 +117,11 @@ export default function ClanPanel() {
             if (data && data.taskId) {
                 setUploadTaskId(data.taskId);
             } else {
-                alert('Загружено, но ID задачи не получен.');
+                notify('Загружено, но ID задачи не получен.', 'error');
             }
         } catch (err: any) {
             console.error(err);
-            alert('Ошибка загрузки: ' + err.message);
+            notify('Ошибка загрузки: ' + err.message, 'error');
         }
         e.target.value = '';
     };

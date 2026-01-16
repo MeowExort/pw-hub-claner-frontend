@@ -46,6 +46,11 @@ export const userApi = {
         }
     },
 
+    getPublicCharacter: async (id: string): Promise<Character> => {
+        const res = await fetch(`${API_URL}/users/public/characters/${id}`);
+        return handleResponse(res);
+    },
+
     createCharacter: async (payload: Omit<Character, 'id'>): Promise<Character> => {
         const res = await fetch(`${API_URL}/users/me/characters`, {
             method: 'POST',
@@ -115,6 +120,23 @@ export const userApi = {
             method: 'PUT',
             headers: getHeaders(),
             body: JSON.stringify(patch)
+        });
+        return handleResponse(res);
+    },
+
+    generateOtp: async (): Promise<{ otpCode: string, otpExpiresAt: string }> => {
+        const res = await fetch(`${API_URL}/users/me/otp`, {
+            method: 'POST',
+            headers: getHeaders(),
+        });
+        return handleResponse(res);
+    },
+
+    updateNotifications: async (dto: any): Promise<any> => {
+        const res = await fetch(`${API_URL}/users/me/notifications`, {
+            method: 'PATCH',
+            headers: getHeaders(),
+            body: JSON.stringify(dto)
         });
         return handleResponse(res);
     }
@@ -215,6 +237,14 @@ export const clanApi = {
         return handleResponse(res);
     },
 
+    markAttendance: async (clanId: string, payload: { characterId: string, stage: number, valor: number, gold: number }) => {
+        const res = await fetch(`${API_URL}/clans/${clanId}/clan-hall`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(payload)
+        });
+        return handleResponse(res);
+    },
     uploadHistory: async (id: string, file: File) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -289,6 +319,13 @@ export const eventsApi = {
             method: 'PATCH',
             headers: getHeaders(),
             body: JSON.stringify(payload)
+        });
+        return handleResponse(res);
+    },
+    deleteEvent: async (id: string) => {
+        const res = await fetch(`${API_URL}/events/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
         });
         return handleResponse(res);
     }

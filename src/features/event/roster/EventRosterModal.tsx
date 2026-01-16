@@ -1,5 +1,6 @@
 import React, {useMemo, useState, useEffect} from 'react';
 import {useAppStore} from '@/shared/model/AppStore';
+import {useToast} from '@/app/providers/ToastContext';
 import type {Squad, Character, ClanMember} from '@/shared/types';
 import {uid} from '@/shared/lib/storage';
 import CharacterTooltip from '@/shared/ui/CharacterTooltip/CharacterTooltip';
@@ -10,6 +11,7 @@ import {addMemberToSquad} from './rosterUtils';
 
 export default function EventRosterModal({eventId, onClose}: { eventId: string; onClose: () => void }) {
     const {events, hasPermission, getClanRoster} = useAppStore();
+    const {notify} = useToast();
     const {user} = useAuth();
     const ev = events.find(e => e.id === eventId);
     const canEdit = hasPermission('CAN_MANAGE_SQUADS');
@@ -243,6 +245,17 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
 
     const isMySquadView = !canEdit && localSquads.length > 0;
 
+    const copySquad = (s: Squad) => {
+        const memberNames = s.members
+            .filter(mId => mId !== s.leaderId)
+            .map(mId => rosterMap[mId]?.name || 'Unknown')
+            .join(', ');
+        const text = `${s.name}: ${memberNames}`;
+        navigator.clipboard.writeText(text).then(() => {
+            notify('Скопировано в буфер обмена', 'success');
+        });
+    };
+
     const myCharacterIds = useMemo(() => user?.characters?.map(c => c.id) || [], [user]);
 
     const displayedSquads = useMemo(() => {
@@ -425,9 +438,25 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                         ) : (
                                             <div style={{fontWeight: 600}}>{s.name}</div>
                                         )}
-                                        {canEdit && <button className="btn secondary small"
-                                                            onClick={() => modifySquads(prev => prev.filter(x => x.id !== s.id))}
-                                                            style={{marginLeft: 8}}>×</button>}
+                                        <div style={{display: 'flex', gap: 4, alignItems: 'center'}}>
+                                            {s.leaderId && myCharacterIds.includes(s.leaderId) && (
+                                                <button 
+                                                    className="btn secondary small" 
+                                                    onClick={() => copySquad(s)}
+                                                    title="Скопировать состав"
+                                                >
+                                                    📋
+                                                </button>
+                                            )}
+                                            {canEdit && (
+                                                <button 
+                                                    className="btn secondary small"
+                                                    onClick={() => modifySquads(prev => prev.filter(x => x.id !== s.id))}
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     <div style={{display: 'grid', gap: 6}}>
                                         {s.members.map((m, idx) => {

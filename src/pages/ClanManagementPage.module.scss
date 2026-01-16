@@ -64,29 +64,67 @@
 .cardHover {
   position: relative;
   transition: transform 0.2s;
+}
 
-  &:hover .cardTooltip {
-    visibility: visible;
-    opacity: 1;
+.appsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.appCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: var(--primary);
   }
 }
 
-.cardTooltip {
-  @extend .tooltip;
-  top: 0;
-  left: 100%;
-  right: auto; /* Reset right property from .tooltip */
-  bottom: auto;
-  transform: none;
-  margin-left: 12px;
-  margin-bottom: 0;
-  z-index: 101;
+.appHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
 
-  &::after {
-    right: 100%;
-    top: 20px;
-    left: auto;
-    margin-left: 0;
-    border-color: transparent #414868 transparent transparent;
+.appUser {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.appDate {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.appMessage {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+.appFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.appActions {
+  display: flex;
+  gap: 8px;
+
+  button {
+    flex: 1;
   }
 }

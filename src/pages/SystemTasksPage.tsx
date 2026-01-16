@@ -1,8 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {tasksApi} from '@/shared/api';
+import {useToast} from '@/app/providers/ToastContext';
 import styles from '@/app/styles/App.module.scss';
 
 export default function SystemTasksPage() {
+    const {notify} = useToast();
     const [tasks, setTasks] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -30,13 +32,13 @@ export default function SystemTasksPage() {
         if (!confirm('Запустить задачу сейчас?')) return;
         try {
             await tasksApi.runTask(taskId);
-            alert('Задача запущена');
+            notify('Задача запущена', 'success');
             // Wait a bit or reload immediately?
             // Since it's async, we might not see "RUNNING" immediately if we query history too fast,
             // but let's try reloading.
             setTimeout(loadData, 500);
         } catch (e) {
-            alert('Ошибка запуска');
+            notify('Ошибка запуска', 'error');
         }
     };
 

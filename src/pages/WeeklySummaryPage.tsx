@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react';
 import s from './WeeklySummaryPage.module.scss';
 import appStyles from '@/app/styles/App.module.scss';
 import {useAppStore} from '@/shared/model/AppStore';
+import {useToast} from '@/app/providers/ToastContext';
 import {isoWeekKey, getStartOfWeekFromIso} from '@/shared/lib/date';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 import {WeekSwitcher} from '@/shared/ui/WeekSwitcher';
@@ -44,6 +45,7 @@ const checkNumericFilter = (val: number, filter: string, op: FilterOperator) => 
 
 export default function WeeklySummaryPage() {
     const {clan, hasPermission} = useAppStore();
+    const {notify} = useToast();
     const [week, setWeek] = useState(isoWeekKey(new Date()));
     const [stats, setStats] = useState<WeeklyStats[]>([]);
     const [loading, setLoading] = useState(false);
@@ -235,10 +237,11 @@ export default function WeeklySummaryPage() {
         try {
             await clanApi.updateWeeklySummary(clan.id, week, payload);
             setEditingId(null);
+            notify('Сохранено', 'success');
             loadStats();
         } catch (e) {
             console.error(e);
-            alert('Ошибка при сохранении');
+            notify('Ошибка при сохранении', 'error');
         }
     };
 

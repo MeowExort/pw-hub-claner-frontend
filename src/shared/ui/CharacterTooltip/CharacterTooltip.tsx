@@ -19,14 +19,29 @@ export default function CharacterTooltip({character, children}: Props) {
     const handleMouseEnter = () => {
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
-            // Check if there is enough space above (approx 350px needed)
-            const fitsTop = rect.top > 350;
+            // Approx tooltip dimensions: width 240px, height 350px (depending on content)
+            const tooltipWidth = 240;
+            const tooltipHeight = 400;
+
+            // Check vertical space
+            const fitsTop = rect.top > tooltipHeight;
             const newPlacement = fitsTop ? 'top' : 'bottom';
+
+            // Calculate horizontal position
+            let left = rect.left + rect.width / 2;
+            const viewportWidth = window.innerWidth;
+
+            // Keep within viewport horizontal bounds
+            if (left - tooltipWidth / 2 < 10) {
+                left = tooltipWidth / 2 + 10;
+            } else if (left + tooltipWidth / 2 > viewportWidth - 10) {
+                left = viewportWidth - tooltipWidth / 2 - 10;
+            }
 
             setPlacement(newPlacement);
             setCoords({
                 top: newPlacement === 'top' ? rect.top - 8 : rect.bottom + 8,
-                left: rect.left + rect.width / 2
+                left: left
             });
             setVisible(true);
         }
@@ -56,7 +71,7 @@ export default function CharacterTooltip({character, children}: Props) {
                     }}
                 >
                     <div className={s.header}>Характеристики</div>
-                    <div className={s.statRow}><span>Физ. атака:</span>
+                    <div className={s.statRow}><span>Атака:</span>
                         <span>{character.minAttack}-{character.maxAttack}</span></div>
                     <div className={s.statRow}><span>Шанс крита:</span> <span>{character.critChance}%</span></div>
                     <div className={s.statRow}><span>Крит. урон:</span> <span>{character.critDamage}%</span></div>

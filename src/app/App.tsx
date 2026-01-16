@@ -14,6 +14,7 @@ import EventsPage from '@/pages/EventsPage';
 import SettingsPage from '@/pages/SettingsPage';
 import CharacterCreationPage from '@/pages/CharacterCreationPage';
 import ClansListPage from '@/pages/ClansListPage';
+import PublicProfilePage from '@/pages/PublicProfilePage';
 import ClanAuditPage from '@/pages/ClanAuditPage';
 import WeeklySummaryPage from '@/pages/WeeklySummaryPage';
 import SystemTasksPage from '@/pages/SystemTasksPage';
@@ -109,6 +110,8 @@ function Shell() {
                         <Route path="/create-character"
                                element={<ProtectedRoute><CharacterCreationPage/></ProtectedRoute>}/>
                         <Route path="/login" element={<LoginPage/>}/>
+                        <Route path="/profile/:id" element={<PublicProfilePage/>}/>
+                        <Route path="/c/:id" element={<PublicProfilePage/>}/>
                         <Route path="*" element={<Navigate to="/" replace/>}/>
                     </Routes>
                 </div>

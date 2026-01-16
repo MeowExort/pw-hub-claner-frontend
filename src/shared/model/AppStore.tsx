@@ -33,6 +33,7 @@ interface AppStoreValue {
     }) => Promise<void>;
     rsvp: (eventId: string, characterId: string, status: 'GOING' | 'NOT_GOING' | 'UNDECIDED') => Promise<void>;
     setSquads: (eventId: string, squads: ClanEvent['squads']) => Promise<void>;
+    deleteEvent: (id: string) => Promise<void>;
     updatePermissions: (role: NonNullable<Clan['members']>[number]['role'], permissions: string[]) => Promise<void>;
     setRhythmReportUploadedThisWeek: (uploaded: boolean) => Promise<void>;
     setForbiddenReportUploadedThisWeek: (uploaded: boolean) => Promise<void>;
@@ -204,6 +205,12 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         await refreshAll();
     }, [notify, refreshAll]);
 
+    const deleteEvent: AppStoreValue['deleteEvent'] = useCallback(async (id) => {
+        await eventsApi.deleteEvent(id);
+        notify('Событие удалено', 'success');
+        await refreshAll();
+    }, [notify, refreshAll]);
+
     const setRhythmReportUploadedThisWeek: AppStoreValue['setRhythmReportUploadedThisWeek'] = useCallback(async (uploaded) => {
         // Найти событие RHYTHM на этой неделе (среда 19:30); если нет — создать.
         const wed = thisWeekWednesdayAt('19:30');
@@ -286,6 +293,7 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         createEvent,
         rsvp,
         setSquads,
+        deleteEvent,
         updatePermissions,
         setRhythmReportUploadedThisWeek,
         setForbiddenReportUploadedThisWeek,
@@ -299,7 +307,7 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         changeMemberRole,
         hasPermission
     }), [
-        clan, events, loading, refreshAll, createClan, updateClanSettings, createEvent, rsvp, setSquads, updatePermissions, setRhythmReportUploadedThisWeek, setForbiddenReportUploadedThisWeek, resolveCharacterNames, getClanRoster,
+        clan, events, loading, refreshAll, createClan, updateClanSettings, createEvent, rsvp, setSquads, deleteEvent, updatePermissions, setRhythmReportUploadedThisWeek, setForbiddenReportUploadedThisWeek, resolveCharacterNames, getClanRoster,
         applyToClan, leaveClan, listClans, getApplications, processApplication, changeMemberRole, permissions
     ]);
 

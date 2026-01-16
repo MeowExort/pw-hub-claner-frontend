@@ -11,6 +11,7 @@ export type ServerName = 'Центавр' | 'Фенрир' | 'Мицар' | 'К�
 
 export interface Character {
     id: string;
+    shortId?: string;
     name: string;
     server: ServerName;
     class: CharacterClass;
@@ -45,6 +46,9 @@ export interface User {
     role?: string;
     characters: Character[];
     mainCharacterId: string;
+    telegramId?: string;
+    telegramUsername?: string;
+    notificationSettings?: any;
 }
 
 export type ClanRole = 'MASTER' | 'MARSHAL' | 'OFFICER' | 'MEMBER' | 'PL';
@@ -75,6 +79,8 @@ export interface ClanSettings {
     customEvents: CustomEventTemplate[];
     // PVP & obligations configuration
     pvpDefaultRallyOffsetMinutes?: number; // default rally offset before start, minutes (default 30)
+    telegramGroupId?: string;
+    telegramThreadId?: string;
     obligations?: {
         rhythmRequired: boolean; // "танцы" (RHYTHM) required to be shown in My Activity if not attended
         forbiddenKnowledge: {
@@ -95,6 +101,13 @@ export interface ClanSettings {
     };
 }
 
+export interface ApplicationVote {
+    id: string;
+    applicationId: string;
+    characterId: string;
+    vote: number; // 1 or -1
+}
+
 export interface ClanApplication {
     id: string;
     userId: string;
@@ -102,6 +115,8 @@ export interface ClanApplication {
     message: string;
     createdDate: string; // ISO
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    votes?: ApplicationVote[];
+    character?: Character;
 }
 
 export interface Clan {
@@ -113,6 +128,8 @@ export interface Clan {
     members: ClanMember[];
     applications: ClanApplication[];
     settings: ClanSettings;
+    telegramGroupId?: string;
+    telegramThreadId?: string;
     weekIso?: string;
     totalValor?: number;
     createdAt?: string;

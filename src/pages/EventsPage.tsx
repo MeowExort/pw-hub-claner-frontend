@@ -6,10 +6,16 @@ import CustomEventModal from '@/features/event/create/CustomEventModal';
 import EventRosterModal from '@/features/event/roster/EventRosterModal';
 
 export default function EventsPage() {
-    const {events, rsvp, hasPermission} = useAppStore();
+    const {events, rsvp, deleteEvent, hasPermission} = useAppStore();
     const {user} = useAuth();
     const [showCreate, setShowCreate] = useState(false);
     const [rosterFor, setRosterFor] = useState<string | null>(null);
+
+    const handleDelete = async (id: string, name: string) => {
+        if (window.confirm(`Вы уверены, что хотите удалить событие "${name}"?`)) {
+            await deleteEvent(id);
+        }
+    };
 
     // Determine the primary character for RSVP operations (Main or First)
     const targetCharId = user?.mainCharacterId || (user?.characters?.[0]?.id);
@@ -47,9 +53,27 @@ export default function EventsPage() {
                                         {e.type} • {e.status}
                                     </div>
                                 </div>
-                                <div className="btn secondary"
-                                     style={{cursor: 'default', fontSize: 12, padding: '4px 8px'}}>
-                                    {e.participants.length} уч.
+                                <div style={{display: 'flex', gap: 8, alignItems: 'flex-start'}}>
+                                    <div className="btn secondary"
+                                         style={{cursor: 'default', fontSize: 12, padding: '4px 8px'}}>
+                                        {e.participants.length} уч.
+                                    </div>
+                                    {hasPermission('CAN_DELETE_EVENTS') && (
+                                        <button 
+                                            className="btn" 
+                                            onClick={() => handleDelete(e.id, e.name)}
+                                            style={{
+                                                background: '#f7768e', 
+                                                color: '#fff', 
+                                                padding: '4px 8px', 
+                                                fontSize: 12,
+                                                minWidth: 'auto'
+                                            }}
+                                            title="Удалить событие"
+                                        >
+                                            🗑️
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 

@@ -4,9 +4,11 @@ import styles from '@/app/styles/App.module.scss';
 import s from './ClanManagementPage.module.scss';
 import {useAppStore} from '@/shared/model/AppStore';
 import {useAuth} from '@/app/providers/AuthContext';
+import {useToast} from '@/app/providers/ToastContext';
 import type {Character, CharacterClass, ClanApplication, ClanMember} from '@/shared/types';
 import {calculatePowerDetails} from '@/shared/lib/power';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
+import CharacterTooltip from '@/shared/ui/CharacterTooltip/CharacterTooltip';
 
 type RosterItem = Character & ClanMember;
 
@@ -30,6 +32,7 @@ const CLASSES: CharacterClass[] = [
 
 export default function ClanManagementPage() {
     const {user} = useAuth();
+    const {notify} = useToast();
     const {
         clan,
         leaveClan,
@@ -43,7 +46,6 @@ export default function ClanManagementPage() {
     const navigate = useNavigate();
     const [roster, setRoster] = useState<RosterItem[]>([]);
     const [applications, setApplications] = useState<ClanApplication[]>([]);
-    const [appNames, setAppNames] = useState<Record<string, { name: string; class: CharacterClass }>>({});
     const [loading, setLoading] = useState(true);
     const [filterClass, setFilterClass] = useState<CharacterClass | 'ALL'>('ALL');
     const [sortBy, setSortBy] = useState<'POWER_DESC' | 'POWER_ASC' | 'NAME_DESC' | 'NAME_ASC'>('POWER_DESC');
@@ -72,9 +74,6 @@ export default function ClanManagementPage() {
                     setRoster(r);
                     const pending = apps.filter(a => a.status === 'PENDING');
                     setApplications(pending);
-                    if (pending.length > 0) {
-                        resolveCharacterNames(pending.map(a => a.characterId)).then(setAppNames);
-                    }
                 })
                 .finally(() => setLoading(false));
         }
@@ -89,10 +88,6 @@ export default function ClanManagementPage() {
         setRoster(r);
         const pending = apps.filter(a => a.status === 'PENDING');
         setApplications(pending);
-        if (pending.length > 0) {
-            const names = await resolveCharacterNames(pending.map(a => a.characterId));
-            setAppNames(names);
-        }
     };
 
     const filtered = useMemo(() => {
@@ -141,45 +136,99 @@ export default function ClanManagementPage() {
 
             {applications.length > 0 && (
                 <div className="card" style={{marginBottom: 16}}>
-                    <div style={{fontWeight: 700, marginBottom: 12}}>Заявки ({applications.length})</div>
-                    <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+                    <div style={{fontWeight: 700, marginBottom: 16, fontSize: '1.2rem'}}>Заявки ({applications.length})</div>
+                    <div className={s.appsGrid}>
                         {applications.map(app => {
-                            const info = appNames[app.characterId];
+                            const info = app.character;
+                            const power = info ? calculatePowerDetails(info).total : 0;
+
                             return (
-                                <div key={app.id} style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    background: '#2b2b3b',
-                                    padding: 10,
-                                    borderRadius: 4
-                                }}>
-                                    <div>
-                                        <div style={{fontWeight: 600, display: 'flex', alignItems: 'center'}}>
-                                            {info ? (
-                                                <>
-                                                    <ClassIcon cls={info.class} size={16}/>
-                                                    {info.name}
-                                                </>
-                                            ) : app.characterId}
+                                <CharacterTooltip key={app.id} character={info || {} as any}>
+                                    <div className={s.appCard}>
+                                        <div className={s.appHeader}>
+                                            <div className={s.appUser}>
+                                                {info ? (
+                                                    <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                                        <ClassIcon cls={info.class} size={20}/>
+                                                        {info.name}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{fontSize: '0.8rem', color: 'var(--muted)'}}>{app.characterId}</span>
+                                                )}
+                                            </div>
+                                            <div className={s.appDate}>
+                                                {new Date(app.createdDate).toLocaleDateString()}
+                                            </div>
                                         </div>
-                                        <div style={{fontSize: '0.9em'}}>{app.message || <i>Нет сообщения</i>}</div>
-                                        <div style={{
-                                            fontSize: '0.8em',
-                                            color: '#888'
-                                        }}>{new Date(app.createdDate).toLocaleString()}</div>
+
+                                        <div className={s.appMessage}>
+                                            {app.message || <i style={{color: 'var(--muted)'}}>Нет сообщения</i>}
+                                        </div>
+
+                                        {info && (
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                fontSize: '0.9rem',
+                                                marginTop: 4
+                                            }}>
+                                                <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+                                                    <span style={{color: 'var(--muted)'}}>Сила:</span>
+                                                    <span style={{fontWeight: 700, color: '#ff9e64'}}>{power.toLocaleString('ru-RU')}</span>
+                                                </div>
+                                                <a 
+                                                    href={`/c/${info.shortId || info.id}`} 
+                                                    target="_blank" 
+                                                    rel="noreferrer"
+                                                    style={{fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'none'}}
+                                                    onClick={e => e.stopPropagation()}
+                                                >
+                                                    Профиль ↗
+                                                </a>
+                                            </div>
+                                        )}
+
+                                        <div className={s.appFooter}>
+                                            {/* Voting visualization */}
+                                            {app.votes && app.votes.length > 0 && (
+                                                <div style={{width: '100%'}}>
+                                                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4}}>
+                                                        <span style={{color: '#9ece6a', fontWeight: 600}}>👍 {app.votes.filter(v => v.vote === 1).length}</span>
+                                                        <span style={{color: '#f7768e', fontWeight: 600}}>{app.votes.filter(v => v.vote === -1).length} 👎</span>
+                                                    </div>
+                                                    <div style={{height: 6, background: '#1a1b26', borderRadius: 3, overflow: 'hidden', display: 'flex'}}>
+                                                        <div style={{
+                                                            height: '100%', 
+                                                            background: '#9ece6a', 
+                                                            width: `${(app.votes.filter(v => v.vote === 1).length / app.votes.length) * 100}%`,
+                                                            transition: 'width 0.3s ease'
+                                                        }} />
+                                                        <div style={{
+                                                            height: '100%', 
+                                                            background: '#f7768e', 
+                                                            flexGrow: 1,
+                                                            transition: 'flex-grow 0.3s ease'
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {canManageApps && (
+                                                <div className={s.appActions} onClick={e => e.stopPropagation()}>
+                                                    <button className="btn" style={{background: '#9ece6a', color: '#000'}}
+                                                            onClick={() => handleProcess(app.id, 'APPROVE')}>
+                                                        Принять
+                                                    </button>
+                                                    <button className="btn" style={{background: '#f7768e', color: '#fff'}}
+                                                            onClick={() => handleProcess(app.id, 'REJECT')}>
+                                                        Отклонить
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    {canManageApps && (
-                                        <div style={{display: 'flex', gap: 8}}>
-                                            <button className="btn" style={{background: '#9ece6a', color: '#000'}}
-                                                    onClick={() => handleProcess(app.id, 'APPROVE')}>Принять
-                                            </button>
-                                            <button className="btn" style={{background: '#f7768e', color: '#fff'}}
-                                                    onClick={() => handleProcess(app.id, 'REJECT')}>Отклонить
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+                                </CharacterTooltip>
                             )
                         })}
                     </div>
@@ -218,128 +267,104 @@ export default function ClanManagementPage() {
                     {filtered.map(char => {
                         const details = calculatePowerDetails(char);
                         return (
-                            <div key={char.id} className={`card ${s.cardHover}`}
-                                 style={{display: 'flex', flexDirection: 'column', gap: 4}}>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'flex-start'
-                                }}>
-                                    <div style={{fontWeight: 700, fontSize: 16, display: 'flex', alignItems: 'center'}}>
-                                        <ClassIcon cls={char.class} size={18}/>
-                                        {char.name}
-                                    </div>
-                                    {canManageRoles && getRoleLevel(char.role) < myLevel ? (
-                                        <button
-                                            className="btn secondary"
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                const currentRoleLevel = getRoleLevel(char.role);
-                                                // If current role is already higher or equal to mine, I shouldn't even see the edit button
-                                                // but let's double check and provide a safe default role in modal if current is not available
-                                                const initialRole = currentRoleLevel < myLevel ? char.role : 'MEMBER';
-                                                setPromoteModal({char, role: initialRole});
-                                            }}
-                                            style={{
+                            <CharacterTooltip key={char.id} character={char}>
+                                <div className={`card ${s.cardHover}`}
+                                     style={{display: 'flex', flexDirection: 'column', gap: 4}}>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start'
+                                    }}>
+                                        <div style={{fontWeight: 700, fontSize: 16, display: 'flex', alignItems: 'center'}}>
+                                            <ClassIcon cls={char.class} size={18}/>
+                                            {char.name}
+                                        </div>
+                                        {canManageRoles && getRoleLevel(char.role) < myLevel ? (
+                                            <button
+                                                className="btn secondary"
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    const currentRoleLevel = getRoleLevel(char.role);
+                                                    // If current role is already higher or equal to mine, I shouldn't even see the edit button
+                                                    // but let's double check and provide a safe default role in modal if current is not available
+                                                    const initialRole = currentRoleLevel < myLevel ? char.role : 'MEMBER';
+                                                    setPromoteModal({char, role: initialRole});
+                                                }}
+                                                style={{
+                                                    fontSize: 12,
+                                                    padding: '2px 8px',
+                                                    height: 'auto',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4
+                                                }}
+                                                title="Изменить роль"
+                                            >
+                                                <span>{char.role}</span>
+                                                <span>✎</span>
+                                            </button>
+                                        ) : (
+                                            <div style={{
                                                 fontSize: 12,
-                                                padding: '2px 8px',
-                                                height: 'auto',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 4
-                                            }}
-                                            title="Изменить роль"
-                                        >
-                                            <span>{char.role}</span>
-                                            <span>✎</span>
-                                        </button>
-                                    ) : (
-                                        <div style={{
-                                            fontSize: 12,
-                                            background: '#2b2b3b',
-                                            padding: '2px 6px',
-                                            borderRadius: 4
-                                        }}>{char.role}</div>
-                                    )}
-                                </div>
-                                <div style={{color: '#7aa2f7', fontSize: 13, display: 'flex', alignItems: 'center'}}>
-                                    {char.class}
-                                </div>
-                                <div style={{fontSize: 12, color: 'var(--muted)'}}>Уровень: {char.level || 1}</div>
-
-                                {/* Full Stats Tooltip */}
-                                <div className={s.cardTooltip}>
-                                    <div style={{fontWeight: 700, marginBottom: 6, color: '#fff'}}>Характеристики</div>
-                                    <div className={s.statRow}><span>Физ. атака:</span>
-                                        <span>{char.minAttack}-{char.maxAttack}</span></div>
-                                    <div className={s.statRow}><span>Шанс крита:</span> <span>{char.critChance}%</span>
+                                                background: '#2b2b3b',
+                                                padding: '2px 6px',
+                                                borderRadius: 4
+                                            }}>{char.role}</div>
+                                        )}
                                     </div>
-                                    <div className={s.statRow}><span>Крит. урон:</span> <span>{char.critDamage}%</span>
+                                    <div style={{color: '#7aa2f7', fontSize: 13, display: 'flex', alignItems: 'center'}}>
+                                        {char.class}
                                     </div>
-                                    <div className={s.statRow}><span>Боевой дух:</span> <span>{char.spirit}</span></div>
-                                    <div className={s.statRow}><span>ПА:</span> <span>{char.attackLevel}</span></div>
-                                    <div className={s.statRow}><span>ПЗ:</span> <span>{char.defenseLevel}</span></div>
-                                    <div className={s.statRow}><span>Физ. пробив:</span>
-                                        <span>{char.physPenetration}</span></div>
-                                    <div className={s.statRow}><span>Маг. пробив:</span>
-                                        <span>{char.magPenetration}</span></div>
-                                    <div className={s.statRow}><span>Аспд/Пение:</span>
-                                        <span>{char.atkPerSec} / {char.chanting}%</span></div>
-                                    <div className={s.divider}/>
-                                    <div className={s.statRow}><span>HP:</span> <span>{char.health}</span></div>
-                                    <div className={s.statRow}><span>Физ. деф:</span> <span>{char.physDef}</span></div>
-                                    <div className={s.statRow}><span>Маг. деф:</span> <span>{char.magDef}</span></div>
-                                    <div className={s.statRow}><span>УФУ/УМУ:</span>
-                                        <span>{char.physReduction}% / {char.magReduction}%</span></div>
-                                </div>
+                                    <div style={{fontSize: 12, color: 'var(--muted)'}}>Уровень: {char.level || 1}</div>
 
-                                <div style={{
-                                    marginTop: 8,
-                                    paddingTop: 8,
-                                    borderTop: '1px solid var(--border)',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}>
-                                    <span style={{fontSize: 12}}>Сила</span>
-                                    <div className={s.tooltipContainer}>
-                                        <span style={{
-                                            fontWeight: 700,
-                                            color: '#ff9e64'
-                                        }}>{details.total.toLocaleString('ru-RU')}</span>
-                                        {/* Power Breakdown Tooltip */}
-                                        <div className={s.tooltip}>
-                                            <div
-                                                style={{fontWeight: 700, marginBottom: 6, color: '#ff9e64'}}>Детализация
-                                                силы
-                                            </div>
-                                            <div className={s.statRow}><span>Тип урона:</span>
-                                                <span>{details.isPhysical ? 'Физ.' : 'Маг.'}</span></div>
-                                            <div className={s.statRow}><span>База (ср.):</span>
-                                                <span>{Math.round(details.baseAvgDamage)}</span></div>
-                                            <div className={s.statRow}><span>Множ. крита:</span>
-                                                <span>x{details.multipliers.crit.toFixed(2)}</span></div>
-                                            <div className={s.statRow}><span>Множ. ПА:</span>
-                                                <span>x{details.multipliers.attackLevel.toFixed(2)}</span></div>
-                                            <div className={s.statRow}><span>Множ. БД:</span>
-                                                <span>x{details.multipliers.spirit.toFixed(2)}</span></div>
-                                            <div className={s.statRow}><span>Множ. пробива:</span>
-                                                <span>x{details.multipliers.penetration.toFixed(2)}</span></div>
-                                            {details.isPhysical ? (
-                                                <div className={s.statRow}><span>Скорость:</span>
-                                                    <span>x{details.attackRate.toFixed(2)}</span></div>
-                                            ) : (
-                                                <div className={s.statRow}><span>Скорость каста:</span>
-                                                    <span>x{(details.multipliers.castSpeed || 1).toFixed(2)}</span>
+                                    <div style={{
+                                        marginTop: 8,
+                                        paddingTop: 8,
+                                        borderTop: '1px solid var(--border)',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}>
+                                        <span style={{fontSize: 12}}>Сила</span>
+                                        <div className={s.tooltipContainer}>
+                                            <span style={{
+                                                fontWeight: 700,
+                                                color: '#ff9e64'
+                                            }}>{details.total.toLocaleString('ru-RU')}</span>
+                                            {/* Power Breakdown Tooltip */}
+                                            <div className={s.tooltip}>
+                                                <div
+                                                    style={{fontWeight: 700, marginBottom: 6, color: '#ff9e64'}}>Детализация
+                                                    силы
                                                 </div>
-                                            )}
-                                            <div className={s.divider}/>
-                                            <div className={s.statRow}><span>DPS (raw):</span>
-                                                <span>{Math.round(details.rawDps).toLocaleString()}</span></div>
+                                                <div className={s.statRow}><span>Тип урона:</span>
+                                                    <span>{details.isPhysical ? 'Физ.' : 'Маг.'}</span></div>
+                                                <div className={s.statRow}><span>База (ср.):</span>
+                                                    <span>{Math.round(details.baseAvgDamage)}</span></div>
+                                                <div className={s.statRow}><span>Множ. крита:</span>
+                                                    <span>x{details.multipliers.crit.toFixed(2)}</span></div>
+                                                <div className={s.statRow}><span>Множ. ПА:</span>
+                                                    <span>x{details.multipliers.attackLevel.toFixed(2)}</span></div>
+                                                <div className={s.statRow}><span>Множ. БД:</span>
+                                                    <span>x{details.multipliers.spirit.toFixed(2)}</span></div>
+                                                <div className={s.statRow}><span>Множ. пробива:</span>
+                                                    <span>x{details.multipliers.penetration.toFixed(2)}</span></div>
+                                                {details.isPhysical ? (
+                                                    <div className={s.statRow}><span>Скорость:</span>
+                                                        <span>x{details.attackRate.toFixed(2)}</span></div>
+                                                ) : (
+                                                    <div className={s.statRow}><span>Скорость каста:</span>
+                                                        <span>x{(details.multipliers.castSpeed || 1).toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                                <div className={s.divider}/>
+                                                <div className={s.statRow}><span>DPS (raw):</span>
+                                                    <span>{Math.round(details.rawDps).toLocaleString()}</span></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </CharacterTooltip>
                         );
                     })}
                 </div>
@@ -389,9 +414,10 @@ export default function ClanManagementPage() {
                                     await changeMemberRole(char.id, role);
                                     setRoster(prev => prev.map(m => m.id === char.id ? {...m, role: role as any} : m));
                                     setPromoteModal(null);
+                                    notify('Роль успешно изменена', 'success');
                                 } catch (e: any) {
                                     console.error(e);
-                                    alert('Ошибка при смене роли: ' + (e.message || 'Unknown error'));
+                                    notify('Ошибка при смене роли: ' + (e.message || 'Unknown error'), 'error');
                                 } finally {
                                     setIsUpdatingRole(false);
                                 }
