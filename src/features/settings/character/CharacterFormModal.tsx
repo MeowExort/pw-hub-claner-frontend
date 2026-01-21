@@ -172,7 +172,7 @@ export default function CharacterFormModal({character, onClose, onSave}: Props) 
             setError('Имя персонажа слишком короткое');
             return;
         }
-        if (formData.pwobsLink && !/^https:\/\/pwobs\.com\/[^/]+\/players\/[^/]+$/.test(formData.pwobsLink)) {
+        if (formData.pwobsLink && !/^https:\/\/pwobs\.ru\/[^/]+\/players\/[^/]+$/.test(formData.pwobsLink)) {
             setError('Некорректная ссылка на pwobs. Пример: https://pwobs.ru/centaur/players/123');
             return;
         }
