@@ -3,12 +3,14 @@ import styles from '@/app/styles/App.module.scss';
 import {useAppStore} from '@/shared/model/AppStore';
 import {useAuth} from '@/app/providers/AuthContext';
 import CreateClanModal from '@/features/clan/create/CreateClanModal';
+import ApplyToClanModal from '@/features/clan/apply/ApplyToClanModal';
 import type {Clan} from '@/shared/types';
 
 export default function ClansListPage() {
     const {listClans, applyToClan} = useAppStore();
     const {user} = useAuth();
     const [showCreate, setShowCreate] = useState(false);
+    const [applyingClan, setApplyingClan] = useState<Clan | null>(null);
     const [clansList, setClansList] = useState<Clan[]>([]);
 
     const currentCharacter = user?.characters.find(c => c.id === user.mainCharacterId);
@@ -30,31 +32,29 @@ export default function ClansListPage() {
         loadClans();
     }, [user?.mainCharacterId, currentCharacter?.server]);
 
-    const handleApply = async (clanId: string) => {
-        const msg = prompt('Сообщение к заявке (необязательно):', '');
-        if (msg !== null) {
-            // Optimistic update
-            if (currentCharacter) {
-                setClansList(prev => prev.map(c => {
-                    if (c.id === clanId) {
-                        const optimisticApp: any = {
-                            id: 'temp_' + Date.now(),
-                            characterId: currentCharacter.id,
-                            clanId: c.id,
-                            status: 'PENDING',
-                            message: msg,
-                            createdDate: new Date().toISOString()
-                        };
-                        const others = (c.applications || []).filter(a => a.characterId !== currentCharacter.id);
-                        return {...c, applications: [...others, optimisticApp]};
-                    }
-                    return c;
-                }));
-            }
-
-            await applyToClan(clanId, msg);
-            loadClans();
+    const handleApply = async (clanId: string, msg: string) => {
+        // Optimistic update
+        if (currentCharacter) {
+            setClansList(prev => prev.map(c => {
+                if (c.id === clanId) {
+                    const optimisticApp: any = {
+                        id: 'temp_' + Date.now(),
+                        characterId: currentCharacter.id,
+                        clanId: c.id,
+                        status: 'PENDING',
+                        message: msg,
+                        createdDate: new Date().toISOString()
+                    };
+                    const others = (c.applications || []).filter(a => a.characterId !== currentCharacter.id);
+                    return {...c, applications: [...others, optimisticApp]};
+                }
+                return c;
+            }));
         }
+
+        await applyToClan(clanId, msg);
+        setApplyingClan(null);
+        loadClans();
     };
 
     return (
@@ -107,7 +107,7 @@ export default function ClansListPage() {
                                         <button className="btn" disabled
                                                 style={{opacity: 0.7, cursor: 'default'}}>Заявка отправлена</button>
                                     ) : (
-                                        <button className="btn" onClick={() => handleApply(c.id)}>
+                                        <button className="btn" onClick={() => setApplyingClan(c)}>
                                             {isRejected ? 'Подать еще раз' : 'Подать заявку'}
                                         </button>
                                     )}
@@ -120,6 +120,13 @@ export default function ClansListPage() {
                 </div>
             </div>
             {showCreate && <CreateClanModal onClose={() => setShowCreate(false)}/>}
+            {applyingClan && (
+                <ApplyToClanModal
+                    clanName={applyingClan.name}
+                    onApply={(msg) => handleApply(applyingClan.id, msg)}
+                    onClose={() => setApplyingClan(null)}
+                />
+            )}
         </div>
     );
 }
