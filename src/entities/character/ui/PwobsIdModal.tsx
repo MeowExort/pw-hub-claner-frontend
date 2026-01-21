@@ -32,7 +32,7 @@ export default function PwobsIdModal({onClose, onSelect, initialServer}: Props) 
     const handleApply = () => {
         if (!charId.trim()) return;
         const serverSlug = SERVER_MAP[server];
-        const link = `https://pwobs.com/${serverSlug}/players/${charId.trim()}`;
+        const link = `https://pwobs.ru/${serverSlug}/players/${charId.trim()}`;
         onSelect(link);
         onClose();
     };

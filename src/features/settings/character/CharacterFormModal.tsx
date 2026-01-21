@@ -173,7 +173,7 @@ export default function CharacterFormModal({character, onClose, onSave}: Props) 
             return;
         }
         if (formData.pwobsLink && !/^https:\/\/pwobs\.com\/[^/]+\/players\/[^/]+$/.test(formData.pwobsLink)) {
-            setError('Некорректная ссылка на pwobs. Пример: https://pwobs.com/centaur/players/123');
+            setError('Некорректная ссылка на pwobs. Пример: https://pwobs.ru/centaur/players/123');
             return;
         }
 
@@ -254,7 +254,7 @@ export default function CharacterFormModal({character, onClose, onSave}: Props) 
                                 Ссылка на pwobs
                                 <button type="button" className={styles.noPwobsBtn} onClick={() => setShowPwobsIdModal(true)}>Персонажа нет на pwobs?</button>
                             </label>
-                            <input className={styles.input} name="pwobsLink" value={formData.pwobsLink} onChange={handleChange} placeholder="https://pwobs.com/centaur/players/123"/>
+                            <input className={styles.input} name="pwobsLink" value={formData.pwobsLink} onChange={handleChange} placeholder="https://pwobs.ru/centaur/players/123"/>
                         </div>
 
                         <div className={styles.sectionTitle}>Атака</div>
