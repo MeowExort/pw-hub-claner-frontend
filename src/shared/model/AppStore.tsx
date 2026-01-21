@@ -100,8 +100,6 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         if (!silent) setLoading(true);
         if (weekIso) currentWeekIso.current = weekIso;
         try {
-            // We pass user.mainCharacterId explicitly to be safe, though API defaults to it
-            // But wait, userApi.getMyClan() in mock detects it from session.
             const targetWeek = weekIso || currentWeekIso.current;
             const [c, ev, perms] = await Promise.all([
                 userApi.getMyClan(targetWeek),
@@ -110,8 +108,10 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
             ]);
 
             setEvents(ev);
-            setHistoryEvents([]); // Reset history on refresh
-            setHasMoreHistory(true);
+            if (!silent) {
+                setHistoryEvents([]); // Reset history only on manual refresh
+                setHasMoreHistory(true);
+            }
             setLoadingHistory(false);
 
             if (c && (!c.members || c.members.length === 0)) {

@@ -45,7 +45,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
 
     // Socket connection
     useEffect(() => {
-        if (!ev) return;
+        if (!ev || isPast) return;
         setIsSynced(false);
         socket.connect();
         socket.emit('joinEvent', {eventId: ev.id});
@@ -62,7 +62,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
             socket.off('squadsUpdated', handleSquadsUpdated);
             socket.disconnect();
         };
-    }, [ev?.id]);
+    }, [ev?.id, isPast]);
 
     const modifySquads = (updateFn: (prev: Squad[]) => Squad[]) => {
         setLocalSquads(prev => {
@@ -98,13 +98,13 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                 if (contextMenu) {
                     setContextMenu(null);
                 } else {
-                    onClose();
+                    onClose?.();
                 }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [contextMenu, onClose]);
+    }, [contextMenu]);
 
     const [includeAllRoster, setIncludeAllRoster] = useState(false);
 
