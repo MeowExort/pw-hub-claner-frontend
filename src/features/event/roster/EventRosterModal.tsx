@@ -247,7 +247,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
         setContextMenu(null);
     };
 
-    const isMySquadView = !canEdit && localSquads.length > 0;
+    const isMySquadView = !hasPermission('CAN_MANAGE_SQUADS') && localSquads.length > 0;
 
     const copySquad = (s: Squad) => {
         const memberNames = s.members
@@ -501,7 +501,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                         </div>
                     )}
 
-                    {(!canEdit && displayedSquads.length === 0) ? (
+                    {(!canEdit && !hasPermission('CAN_MANAGE_SQUADS') && displayedSquads.length === 0) ? (
                         <div className="card" style={{padding: 32, textAlign: 'center', color: 'var(--muted)'}}>
                             Вас еще не расписали в отряд
                         </div>
