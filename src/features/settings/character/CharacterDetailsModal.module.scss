@@ -1,0 +1,141 @@
+.content {
+  padding: 0;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-xl);
+}
+
+.sectionTitle {
+  margin-top: 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-sm);
+  font-size: 1.1rem;
+
+  &.warning {
+    color: var(--warning);
+  }
+}
+
+.statsList, .powerStats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statLabel {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.statValue {
+  font-weight: 600;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-xs) 0;
+}
+
+.powerCardWrapper {
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.powerCard {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.powerLabel {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-xs);
+}
+
+.powerValue {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--warning);
+}
+
+.powerSubLabel {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: var(--space-xs);
+}
+
+.linkSection {
+  margin-top: var(--space-xl);
+}
+
+.linkTitle {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-sm);
+}
+
+.link {
+  color: var(--primary);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  transition: var(--transition-fast);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--primary);
+  }
+}
+
+.idSection {
+  margin-top: var(--space-xl);
+  padding: var(--space-md);
+  background: var(--bg-elev);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.idRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.idLabel {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.idValue {
+  font-family: monospace;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.footerActions {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}

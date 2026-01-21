@@ -41,7 +41,7 @@ export default function PublicProfilePage() {
                     <ClassIcon cls={char.class} size={48}/>
                     <div>
                         <h1 style={{margin: 0}}>{char.name}</h1>
-                        <div style={{color: 'var(--muted)'}}>{char.class} • {char.server} • {char.level} ур.</div>
+                        <div style={{color: 'var(--muted)'}}>{char.class} • {char.server}</div>
                     </div>
                 </div>
                 <button className="btn secondary" onClick={() => setShowHistory(true)}>

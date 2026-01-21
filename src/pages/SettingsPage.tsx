@@ -172,7 +172,6 @@ export default function SettingsPage() {
                                 <div style={{color: 'var(--muted)', fontSize: '0.9rem'}}>
                                     {char.class} • {char.server}
                                 </div>
-                                <div style={{fontSize: '0.9rem'}}>Уровень: {char.level}</div>
                                 <div style={{fontSize: '0.9rem', color: 'var(--primary)', marginTop: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'}}
                                      onClick={() => {
                                          const isProd = window.location.hostname !== 'localhost';
