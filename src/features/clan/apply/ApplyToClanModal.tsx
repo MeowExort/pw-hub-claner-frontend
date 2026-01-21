@@ -11,9 +11,7 @@ export default function ApplyToClanModal({clanName, onApply, onClose}: ApplyToCl
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (message.trim()) {
-            onApply(message.trim());
-        }
+        onApply(message.trim());
     };
 
     return (
@@ -23,15 +21,14 @@ export default function ApplyToClanModal({clanName, onApply, onClose}: ApplyToCl
                 <form onSubmit={handleSubmit} className="grid" style={{gridTemplateColumns: '1fr', gap: 12}}>
                     <textarea 
                         className="input" 
-                        placeholder="Сообщение к заявке (обязательно)" 
+                        placeholder="Сообщение к заявке (необязательно)" 
                         value={message}
                         onChange={e => setMessage(e.target.value)}
-                        required
                         autoFocus
                     />
                     <div style={{display: 'flex', gap: 8, justifyContent: 'flex-end'}}>
                         <button type="button" className="btn secondary" onClick={onClose}>Отмена</button>
-                        <button type="submit" className="btn" disabled={!message.trim()}>Отправить</button>
+                        <button type="submit" className="btn">Отправить</button>
                     </div>
                 </form>
             </div>
