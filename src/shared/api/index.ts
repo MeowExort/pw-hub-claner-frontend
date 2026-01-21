@@ -351,3 +351,29 @@ export const tasksApi = {
     }
 };
 
+export const adminApi = {
+    getStats: async () => {
+        const res = await fetch(`${API_URL}/admin/stats`, {headers: getHeaders()});
+        return handleResponse(res);
+    },
+    listClans: async () => {
+        const res = await fetch(`${API_URL}/admin/clans`, {headers: getHeaders()});
+        return handleResponse(res);
+    },
+    getClanStats: async (id: string) => {
+        const res = await fetch(`${API_URL}/admin/clans/${id}/stats`, {headers: getHeaders()});
+        return handleResponse(res);
+    },
+    getClanActivity: async (id: string) => {
+        const res = await fetch(`${API_URL}/admin/clans/${id}/activity`, {headers: getHeaders()});
+        return handleResponse(res);
+    },
+    deleteClan: async (id: string) => {
+        const res = await fetch(`${API_URL}/admin/clans/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    }
+};
+

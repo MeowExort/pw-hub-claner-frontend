@@ -15,6 +15,14 @@ export default function MainMenu() {
                          className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Кланы</NavLink>
                 <NavLink to="/settings"
                          className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Настройки</NavLink>
+                {user?.role === 'ADMIN' && (
+                    <>
+                        <NavLink to="/admin/stats"
+                                 className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Статистика</NavLink>
+                        <NavLink to="/admin/clans"
+                                 className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Кланы (А)</NavLink>
+                    </>
+                )}
             </nav>
         );
     }
@@ -36,6 +44,10 @@ export default function MainMenu() {
             )}
             {user?.role === 'ADMIN' && (
                 <>
+                    <NavLink to="/admin/stats"
+                             className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Статистика</NavLink>
+                    <NavLink to="/admin/clans"
+                             className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Кланы (А)</NavLink>
                     <NavLink to="/system/tasks"
                              className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Задачи</NavLink>
                     <NavLink to="/system/populate"

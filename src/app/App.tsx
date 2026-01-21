@@ -18,6 +18,8 @@ import PublicProfilePage from '@/pages/PublicProfilePage';
 import ClanAuditPage from '@/pages/ClanAuditPage';
 import WeeklySummaryPage from '@/pages/WeeklySummaryPage';
 import SystemTasksPage from '@/pages/SystemTasksPage';
+import AdminStatsPage from '@/pages/AdminStatsPage';
+import AdminClansPage from '@/pages/AdminClansPage';
 import PopulateDbPage from '@/pages/PopulateDbPage';
 import styles from './styles/App.module.scss';
 import Header from '@/widgets/layout/Header';
@@ -102,6 +104,10 @@ function Shell() {
                             <ProtectedRoute><RequireClan><WeeklySummaryPage/></RequireClan></ProtectedRoute>}/>
                         <Route path="/clans" element={
                             <ProtectedRoute><RequireNoClan><ClansListPage/></RequireNoClan></ProtectedRoute>}/>
+                        <Route path="/admin/stats" element={
+                            <ProtectedRoute><RequireAdmin><AdminStatsPage/></RequireAdmin></ProtectedRoute>}/>
+                        <Route path="/admin/clans" element={
+                            <ProtectedRoute><RequireAdmin><AdminClansPage/></RequireAdmin></ProtectedRoute>}/>
                         <Route path="/system/tasks" element={
                             <ProtectedRoute><RequireAdmin><SystemTasksPage/></RequireAdmin></ProtectedRoute>}/>
                         <Route path="/system/populate" element={
