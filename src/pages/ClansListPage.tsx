@@ -52,9 +52,12 @@ export default function ClansListPage() {
             }));
         }
 
-        await applyToClan(clanId, msg);
-        setApplyingClan(null);
-        loadClans();
+        try {
+            await applyToClan(clanId, msg);
+        } finally {
+            setApplyingClan(null);
+            loadClans();
+        }
     };
 
     return (
