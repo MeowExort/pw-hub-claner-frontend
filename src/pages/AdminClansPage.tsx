@@ -113,7 +113,7 @@ export default function AdminClansPage() {
     <div style={{ padding: 20 }}>
       <h2 className={styles.pageTitle}>Управление кланами (Админ)</h2>
 
-      <div className="card" style={{ background: 'var(--surface)', borderRadius: 8, overflow: 'hidden' }}>
+      <div className="card" style={{ background: 'var(--card)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}>
@@ -170,9 +170,10 @@ export default function AdminClansPage() {
           padding: 20
         }}>
           <div style={{ 
-            background: 'var(--surface)', padding: 25, borderRadius: 12, width: '100%', maxWidth: 800, 
+            background: 'var(--bg-elev)', padding: 25, borderRadius: 12, width: '100%', maxWidth: 800, 
             maxHeight: '90vh', overflow: 'auto', position: 'relative',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+            border: '1px solid var(--border)'
           }}>
             <button 
               onClick={closeModal}
