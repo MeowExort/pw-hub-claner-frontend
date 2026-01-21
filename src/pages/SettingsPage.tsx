@@ -178,10 +178,10 @@ export default function SettingsPage() {
                                          const base = isProd ? 'https://api.claner.pw-hub.ru/api/public/share/character' : `${window.location.origin}/api/public/share/character`;
                                          const link = `${base}/${char.shortId || char.id}`;
                                          navigator.clipboard.writeText(link);
-                                         notify('Ссылка для Telegram скопирована!', 'success');
+                                         notify('Ссылка на персонажа скопирована!', 'success');
                                      }}
                                 >
-                                    <span>🔗 Ссылка для Telegram</span>
+                                    <span>🔗 поделиться</span>
                                 </div>
                                 {window.location.hostname === 'localhost' && (
                                     <div style={{fontSize: '0.75rem', color: 'var(--warning)', marginTop: 2}}>
