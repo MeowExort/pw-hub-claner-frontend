@@ -30,7 +30,8 @@ const PERMISSION_LABELS: Record<string, string> = {
     CAN_EDIT_EVENTS: 'Ред. событий',
     CAN_MANAGE_SQUADS: 'Упр. отрядами',
     CAN_VIEW_LOGS: 'Просмотр аудита',
-    MANUAL_PVE_EDIT: 'Ручное редактирование ПВЕ'
+    MANUAL_PVE_EDIT: 'Ручное редактирование ПВЕ',
+    CAN_EDIT_CHARACTERS: 'Ред. персонажей'
 };
 
 import {Tooltip} from '@/shared/ui/Tooltip/Tooltip';
@@ -211,6 +212,7 @@ export default function ClanAuditPage() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [roster, setRoster] = useState<any[]>([]);
     const [filters, setFilters] = useState({
@@ -220,6 +222,20 @@ export default function ClanAuditPage() {
         dateFrom: '',
         dateTo: ''
     });
+
+    const filteredLogs = React.useMemo(() => {
+        return logs.filter(log => {
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                const actorName = log.actor?.name.toLowerCase() || 'система';
+                const action = log.action.toLowerCase();
+                const target = log.target?.toLowerCase() || '';
+                
+                return actorName.includes(query) || action.includes(query) || target.includes(query);
+            }
+            return true;
+        });
+    }, [logs, searchQuery]);
 
     const loadRoster = async () => {
         try {
@@ -291,6 +307,18 @@ export default function ClanAuditPage() {
             </header>
 
             <div className={styles.filters}>
+                <div className={styles.filterGroup} style={{ flex: '1 1 200px' }}>
+                    <label>Поиск по логам</label>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className={styles.input}
+                        placeholder="Ник, действие, цель..."
+                        style={{ width: '100%' }}
+                    />
+                </div>
+
                 <div className={styles.filterGroup}>
                     <label>Действие</label>
                     <select
@@ -366,7 +394,7 @@ export default function ClanAuditPage() {
                         </tr>
                         </thead>
                         <tbody>
-                        {logs.map(log => (
+                        {filteredLogs.map(log => (
                             <tr key={log.id}>
                                 <td>{formatDate(log.createdAt)}</td>
                                 <td>
@@ -383,7 +411,7 @@ export default function ClanAuditPage() {
                                 </td>
                             </tr>
                         ))}
-                        {logs.length === 0 && (
+                        {filteredLogs.length === 0 && (
                             <tr>
                                 <td colSpan={5} style={{textAlign: 'center'}}>Логов не найдено</td>
                             </tr>

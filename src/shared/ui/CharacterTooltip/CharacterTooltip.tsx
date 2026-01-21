@@ -1,7 +1,9 @@
 import React, {useState, useRef} from 'react';
 import {createPortal} from 'react-dom';
 import type {Character} from '@/shared/types';
-import {calculatePowerDetails} from '@/shared/lib/power';
+import {CHARACTER_STAT_LABELS} from '@/shared/types';
+import {formatNumber} from '@/shared/lib/number';
+import {CharacterPower} from '@/entities/character/ui/CharacterPower';
 import s from './CharacterTooltip.module.scss';
 
 interface Props {
@@ -10,7 +12,6 @@ interface Props {
 }
 
 export default function CharacterTooltip({character, children}: Props) {
-    const details = calculatePowerDetails(character);
     const [visible, setVisible] = useState(false);
     const [coords, setCoords] = useState({top: 0, left: 0});
     const [placement, setPlacement] = useState<'top' | 'bottom'>('top');
@@ -19,8 +20,8 @@ export default function CharacterTooltip({character, children}: Props) {
     const handleMouseEnter = () => {
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
-            // Approx tooltip dimensions: width 240px, height 350px (depending on content)
-            const tooltipWidth = 240;
+            // Expanded dimensions for two-column layout
+            const tooltipWidth = 520;
             const tooltipHeight = 400;
 
             // Check vertical space
@@ -51,12 +52,19 @@ export default function CharacterTooltip({character, children}: Props) {
         setVisible(false);
     };
 
+    const handleFocus = () => {
+        handleMouseEnter();
+    };
+
     return (
         <div
             className={s.container}
             ref={containerRef}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            onFocus={handleFocus}
+            onBlur={handleMouseLeave}
+            tabIndex={0}
         >
             {children}
             {visible && createPortal(
@@ -70,33 +78,36 @@ export default function CharacterTooltip({character, children}: Props) {
                         transform: placement === 'top' ? 'translate(-50%, -100%)' : 'translate(-50%, 0)'
                     }}
                 >
-                    <div className={s.header}>Характеристики</div>
-                    <div className={s.statRow}><span>Атака:</span>
-                        <span>{character.minAttack}-{character.maxAttack}</span></div>
-                    <div className={s.statRow}><span>Шанс крита:</span> <span>{character.critChance}%</span></div>
-                    <div className={s.statRow}><span>Крит. урон:</span> <span>{character.critDamage}%</span></div>
-                    <div className={s.statRow}><span>Боевой дух:</span> <span>{character.spirit}</span></div>
-                    <div className={s.statRow}><span>ПА:</span> <span>{character.attackLevel}</span></div>
-                    <div className={s.statRow}><span>ПЗ:</span> <span>{character.defenseLevel}</span></div>
-                    <div className={s.statRow}><span>Физ. пробив:</span> <span>{character.physPenetration}</span></div>
-                    <div className={s.statRow}><span>Маг. пробив:</span> <span>{character.magPenetration}</span></div>
-                    <div className={s.statRow}><span>Аспд/Пение:</span>
-                        <span>{character.atkPerSec} / {character.chanting}%</span></div>
-                    <div className={s.divider}/>
-                    <div className={s.statRow}><span>HP:</span> <span>{character.health}</span></div>
-                    <div className={s.statRow}><span>Физ. деф:</span> <span>{character.physDef}</span></div>
-                    <div className={s.statRow}><span>Маг. деф:</span> <span>{character.magDef}</span></div>
-                    <div className={s.statRow}><span>УФУ/УМУ:</span>
-                        <span>{character.physReduction}% / {character.magReduction}%</span></div>
+                    <div className={s.columns}>
+                        <div className={s.column}>
+                            <div className={s.header}>Характеристики</div>
+                            <div className={s.statRow}><span>Атака:</span>
+                                <span>{formatNumber(character.minAttack)}-{formatNumber(character.maxAttack)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.critChance}:</span> <span>{formatNumber(character.critChance, 1)}%</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.critDamage}:</span> <span>{formatNumber(character.critDamage)}%</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.spirit}:</span> <span>{formatNumber(character.spirit)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.attackLevel}:</span> <span>{formatNumber(character.attackLevel)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.defenseLevel}:</span> <span>{formatNumber(character.defenseLevel)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.physPenetration}:</span> <span>{formatNumber(character.physPenetration)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.magPenetration}:</span> <span>{formatNumber(character.magPenetration)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.atkPerSec}/{CHARACTER_STAT_LABELS.chanting}:</span>
+                                <span>{formatNumber(character.atkPerSec, 2)} / {formatNumber(character.chanting)}%</span></div>
+                            <div className={s.divider}/>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.health}:</span> <span>{formatNumber(character.health)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.physDef}:</span> <span>{formatNumber(character.physDef)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.magDef}:</span> <span>{formatNumber(character.magDef)}</span></div>
+                            <div className={s.statRow}><span>{CHARACTER_STAT_LABELS.physReduction}/{CHARACTER_STAT_LABELS.magReduction}:</span>
+                                <span>{formatNumber(character.physReduction, 1)}% / {formatNumber(character.magReduction, 1)}%</span></div>
+                        </div>
 
-                    <div className={s.divider}/>
-                    <div className={s.header} style={{color: '#ff9e64'}}>Детализация силы
-                        ({Math.round(details.total).toLocaleString()})
+                        <div className={s.column}>
+                            <CharacterPower 
+                                character={character} 
+                                showStats={true} 
+                                className={s.powerComponent}
+                            />
+                        </div>
                     </div>
-                    <div className={s.statRow}><span>Тип урона:</span>
-                        <span>{details.isPhysical ? 'Физ.' : 'Маг.'}</span></div>
-                    <div className={s.statRow}><span>DPS (raw):</span>
-                        <span>{Math.round(details.rawDps).toLocaleString()}</span></div>
                 </div>,
                 document.body
             )}

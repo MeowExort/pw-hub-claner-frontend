@@ -1,9 +1,12 @@
 import React, {useState, useEffect} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import styles from '@/app/styles/App.module.scss';
 import {useAuth} from '@/app/providers/AuthContext';
 import {useToast} from '@/app/providers/ToastContext';
 import CharacterDetailsModal from '@/features/settings/character/CharacterDetailsModal';
+import CharacterHistoryModal from '@/features/settings/character/CharacterHistoryModal';
+import CharacterFormModal from '@/features/settings/character/CharacterFormModal';
+import VersionComparison from '@/features/settings/character/VersionComparison';
 import {Character} from '@/shared/types';
 import {userApi} from '@/shared/api';
 
@@ -13,8 +16,18 @@ export default function SettingsPage() {
     const {user, refresh} = useAuth();
     const {notify} = useToast();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<Tab>('GENERAL');
+    const {tab} = useParams<{ tab: string }>();
+
+    const activeTab = (tab?.toUpperCase() as Tab) || 'GENERAL';
+
+    const setActiveTab = (newTab: Tab) => {
+        navigate(`/settings/${newTab.toLowerCase()}`);
+    };
+
     const [viewCharacter, setViewCharacter] = useState<Character | null>(null);
+    const [editCharacter, setEditCharacter] = useState<Character | null>(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [historyCharacter, setHistoryCharacter] = useState<Character | null>(null);
     const [otp, setOtp] = useState<{ code: string, expiresAt: string } | null>(null);
     const [loadingOtp, setLoadingOtp] = useState(false);
     
@@ -25,6 +38,12 @@ export default function SettingsPage() {
         pvpEventCreated: true,
         pvpEventRally: true
     });
+
+    useEffect(() => {
+        if (tab && !['general', 'characters', 'notifications'].includes(tab.toLowerCase())) {
+            navigate('/settings/general', { replace: true });
+        }
+    }, [tab, navigate]);
 
     useEffect(() => {
         if (user?.notificationSettings) {
@@ -122,7 +141,7 @@ export default function SettingsPage() {
                         marginBottom: '1rem'
                     }}>
                         <div style={{fontWeight: 600}}>Управление персонажами</div>
-                        <button className="btn" onClick={() => navigate('/create-character')}>
+                        <button className="btn" onClick={() => setShowCreateModal(true)}>
                             + Создать персонажа
                         </button>
                     </div>
@@ -174,16 +193,23 @@ export default function SettingsPage() {
                                 <div style={{
                                     marginTop: '1rem',
                                     display: 'grid',
-                                    gridTemplateColumns: '1fr 1fr',
+                                    gridTemplateColumns: '1fr 1fr 1fr',
                                     gap: '8px'
                                 }}>
                                     <button className="btn secondary" style={{fontSize: '0.9rem', padding: '6px'}}
-                                            onClick={() => navigate(`/create-character?edit=${char.id}`)}>
-                                        Редактировать
+                                            onClick={() => setEditCharacter(char)}
+                                            title="Редактировать">
+                                        ✎
                                     </button>
                                     <button className="btn secondary" style={{fontSize: '0.9rem', padding: '6px'}}
-                                            onClick={() => setViewCharacter(char)}>
-                                        Просмотр
+                                            onClick={() => setViewCharacter(char)}
+                                            title="Просмотр">
+                                        👁
+                                    </button>
+                                    <button className="btn secondary" style={{fontSize: '0.9rem', padding: '6px'}}
+                                            onClick={() => setHistoryCharacter(char)}
+                                            title="История изменений">
+                                        📜
                                     </button>
                                 </div>
                             </div>
@@ -238,6 +264,24 @@ export default function SettingsPage() {
             )}
 
             {viewCharacter && <CharacterDetailsModal character={viewCharacter} onClose={() => setViewCharacter(null)}/>}
+            {editCharacter && (
+                <CharacterFormModal
+                    character={editCharacter}
+                    onClose={() => setEditCharacter(null)}
+                />
+            )}
+            {showCreateModal && (
+                <CharacterFormModal
+                    onClose={() => setShowCreateModal(false)}
+                />
+            )}
+            {historyCharacter && (
+                <CharacterHistoryModal
+                    characterId={historyCharacter.id}
+                    characterName={historyCharacter.name}
+                    onClose={() => setHistoryCharacter(null)}
+                />
+            )}
         </div>
     );
 }

@@ -266,24 +266,35 @@ export default function WeeklySummaryPage() {
             {loading && stats.length === 0 ? (
                 <div className={s.loading}>Загрузка данных...</div>
             ) : (
-                <table className={s.table} style={{opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s'}}>
+                <div className={appStyles.tableWrapper} style={{ marginTop: 0 }}>
+                    <table className={s.table} style={{opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s'}}>
                     <thead>
                     <tr>
                         <th className={s.charName}>Персонаж</th>
                         {DAYS.map(d => <th key={d}>{d} (КХ)</th>)}
-                        <th onClick={() => requestSort('khValor')} style={{cursor: 'pointer', userSelect: 'none'}}>
-                            КХ (Доблесть) {sortConfig.key === 'khValor' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                        <th onClick={() => requestSort('khValor')} className={s.sortable}>
+                            КХ (Доблесть)
+                            <span className={s.sortIcon}>
+                                {sortConfig.key === 'khValor' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                            </span>
                         </th>
-                        <th onClick={() => requestSort('rhythmValor')} style={{cursor: 'pointer', userSelect: 'none'}}>
-                            Ритм
-                            (Доблесть) {sortConfig.key === 'rhythmValor' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                        <th onClick={() => requestSort('rhythmValor')} className={s.sortable}>
+                            Ритм (Доблесть)
+                            <span className={s.sortIcon}>
+                                {sortConfig.key === 'rhythmValor' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                            </span>
                         </th>
-                        <th onClick={() => requestSort('zuCircles')} style={{cursor: 'pointer', userSelect: 'none'}}>
-                            ЗУ (Круги) {sortConfig.key === 'zuCircles' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                        <th onClick={() => requestSort('zuCircles')} className={s.sortable}>
+                            ЗУ (Круги)
+                            <span className={s.sortIcon}>
+                                {sortConfig.key === 'zuCircles' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                            </span>
                         </th>
-                        <th onClick={() => requestSort('totalValor')} style={{cursor: 'pointer', userSelect: 'none'}}>
-                            Итого
-                            Доблесть {sortConfig.key === 'totalValor' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                        <th onClick={() => requestSort('totalValor')} className={s.sortable}>
+                            Итого Доблесть
+                            <span className={s.sortIcon}>
+                                {sortConfig.key === 'totalValor' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                            </span>
                         </th>
                         {canEdit && <th>Действия</th>}
                     </tr>
@@ -484,6 +495,7 @@ export default function WeeklySummaryPage() {
                     </tr>
                     </tfoot>
                 </table>
+                </div>
             )}
         </div>
     );

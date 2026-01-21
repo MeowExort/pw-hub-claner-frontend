@@ -7,6 +7,7 @@ import {Tooltip} from '@/shared/ui/Tooltip/Tooltip';
 
 const PERMISSIONS_LIST = [
     {key: 'CAN_MANAGE_MEMBERS', label: 'Управление составом'},
+    {key: 'CAN_KICK_MEMBERS', label: 'Исключение участников'},
     {key: 'MANAGE_ROLES', label: 'Управление ролями'},
     {key: 'CAN_CREATE_EVENTS', label: 'Создание событий'},
     {key: 'CAN_EDIT_EVENTS', label: 'Закрытие событий'},
@@ -15,18 +16,21 @@ const PERMISSIONS_LIST = [
     {key: 'MANUAL_PVE_EDIT', label: 'Ручное редактирование ПВЕ'},
     {key: 'CAN_EDIT_SETTINGS', label: 'Редактирование настроек'},
     {key: 'CAN_VIEW_LOGS', label: 'Просмотр логов'},
+    {key: 'CAN_EDIT_CHARACTERS', label: 'Редактирование персонажей'},
 ];
 
 const PERMISSION_DESCRIPTIONS: Record<string, string> = {
-    CAN_MANAGE_MEMBERS: 'Управление составом: прием заявок, исключение участников.',
-    CAN_EDIT_SETTINGS: 'Настройки клана: изменение названия, требований, ПВП/ПВЕ конфигураций.',
-    CAN_CREATE_EVENTS: 'Календарь: создание новых событий.',
-    CAN_EDIT_EVENTS: 'Календарь: завершение событий (изменение статуса).',
-    CAN_MANAGE_SQUADS: 'События: управление составами пати, назначение ПЛов.',
-    CAN_VIEW_LOGS: 'Аудит: доступ к просмотру истории действий участников клана.',
-    CAN_UPLOAD_REPORTS: 'Отчеты: загрузка истории гильдии для подтверждения активности.',
-    MANUAL_PVE_EDIT: 'ПВЕ: ручное изменение прогресса/доблести участников.',
-    MANAGE_ROLES: 'Управление составом: изменение ролей (ниже своей).'
+    CAN_MANAGE_MEMBERS: 'Управление составом: прием и отклонение заявок в клан.',
+    CAN_KICK_MEMBERS: 'Возможность исключать любых участников, чья роль ниже вашей.',
+    CAN_EDIT_SETTINGS: 'Полный доступ к настройкам клана: название, требования, ПВП/ПВЕ конфигурации и лимиты.',
+    CAN_CREATE_EVENTS: 'Доступ к календарю для планирования и создания новых событий клана.',
+    CAN_EDIT_EVENTS: 'Возможность завершать события, изменять их статус и редактировать детали после создания.',
+    CAN_MANAGE_SQUADS: 'Управление составами групп внутри событий, назначение лидеров пати (ПЛов).',
+    CAN_VIEW_LOGS: 'Доступ к разделу Аудит для просмотра истории всех важных действий в клане.',
+    CAN_UPLOAD_REPORTS: 'Право загружать технические отчеты (логи гильдии) для автоматического учета активности.',
+    MANUAL_PVE_EDIT: 'Ручное изменение показателей КХ, Ритма и ЗУ для участников (требуется для исправления ошибок бота).',
+    MANAGE_ROLES: 'Возможность изменять роли участников, чья текущая и целевая роли ниже вашей.',
+    CAN_EDIT_CHARACTERS: 'Право редактировать характеристики (ПА/ПЗ, БД) и имена любых персонажей в клане.'
 };
 
 const ROLES: ClanRole[] = ['MASTER', 'MARSHAL', 'OFFICER', 'PL', 'MEMBER'];
@@ -107,27 +111,34 @@ export default function ClanSettingsPage() {
         }
     }, [clan, hasChanges]);
 
+    const [saving, setSaving] = useState(false);
+
     const save = async () => {
-        await updateClanSettings({
-            pvpDefaultRallyOffsetMinutes: pvpOffset,
-            rolePermissions: rolePerms,
-            telegramGroupId: tgGroupId,
-            telegramThreadId: tgThreadId,
-            obligations: {
-                rhythmRequired,
-                forbiddenKnowledge: {
-                    required: fkRequired,
-                    badFrom: fkBad,
-                    normalFrom: fkNormal,
-                    goodFrom: fkGood
-                },
-                clanHall: {
-                    required: khRequired,
-                    requiredStagesSameDay: khStages
+        setSaving(true);
+        try {
+            await updateClanSettings({
+                pvpDefaultRallyOffsetMinutes: pvpOffset,
+                rolePermissions: rolePerms,
+                telegramGroupId: tgGroupId,
+                telegramThreadId: tgThreadId,
+                obligations: {
+                    rhythmRequired,
+                    forbiddenKnowledge: {
+                        required: fkRequired,
+                        badFrom: fkBad,
+                        normalFrom: fkNormal,
+                        goodFrom: fkGood
+                    },
+                    clanHall: {
+                        required: khRequired,
+                        requiredStagesSameDay: khStages
+                    }
                 }
-            }
-        });
-        setHasChanges(false);
+            });
+            setHasChanges(false);
+        } finally {
+            setSaving(false);
+        }
     };
 
     // Change handlers wrapper to set dirty flag
@@ -158,6 +169,40 @@ export default function ClanSettingsPage() {
         setHasChanges(true);
     };
 
+    const handleBulkPermissions = (role: ClanRole, action: 'ALL' | 'NONE') => {
+        setRolePerms(prev => {
+            const idx = prev.findIndex(p => p.role === role);
+            let next = [...prev];
+            const nextPerms = action === 'ALL' ? PERMISSIONS_LIST.map(p => p.key) : [];
+
+            if (idx >= 0) {
+                next[idx] = {...next[idx], permissions: nextPerms};
+            } else {
+                next.push({role, permissions: nextPerms});
+            }
+            return next;
+        });
+        setHasChanges(true);
+    };
+
+    const handleCopyPermissions = (fromRole: ClanRole, toRole: ClanRole) => {
+        const fromEntry = rolePerms.find(p => p.role === fromRole);
+        const fromPerms = fromEntry ? [...fromEntry.permissions] : [];
+
+        setRolePerms(prev => {
+            const idx = prev.findIndex(p => p.role === toRole);
+            let next = [...prev];
+
+            if (idx >= 0) {
+                next[idx] = {...next[idx], permissions: fromPerms};
+            } else {
+                next.push({role: toRole, permissions: fromPerms});
+            }
+            return next;
+        });
+        setHasChanges(true);
+    };
+
     if (!clan) return <div className="card">Вы не состоите в клане.</div>;
 
     return (
@@ -165,10 +210,18 @@ export default function ClanSettingsPage() {
             <div className={s.pageTitle}
                  style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                 <span>Настройки клана</span>
-                {hasChanges && <button className="btn" onClick={save}>Сохранить изменения</button>}
+                {hasChanges && (
+                    <button className="btn" onClick={save} disabled={saving}>
+                        {saving ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span className={s.spinner}></span> Сохранение...
+                            </span>
+                        ) : 'Сохранить изменения'}
+                    </button>
+                )}
             </div>
 
-            <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16}}>
+            <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16}}>
 
                 {/* Role Permissions */}
                 <div className="card" style={{gridColumn: '1 / -1'}}>
@@ -187,31 +240,38 @@ export default function ClanSettingsPage() {
 
                             return (
                                 <div key={role}
-                                     style={{border: '1px solid var(--border)', borderRadius: 8, padding: 10}}>
-                                    <div style={{
-                                        fontWeight: 600,
-                                        marginBottom: 8,
-                                        color: '#7aa2f7',
-                                        display: 'inline-block'
-                                    }}>{role}</div>
-                                    <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
+                                     className={s.roleCard}>
+                                    <div className={s.roleHeader}>
+                                        <div className={s.roleName}>{role}</div>
+                                        <div className={s.roleActions}>
+                                            <button className="btn small secondary" style={{padding: '2px 6px', fontSize: '10px'}} onClick={() => handleBulkPermissions(role, 'ALL')}>Все</button>
+                                            <button className="btn small secondary" style={{padding: '2px 6px', fontSize: '10px'}} onClick={() => handleBulkPermissions(role, 'NONE')}>Никто</button>
+                                            <select 
+                                                className={s.copySelect}
+                                                onChange={(e) => {
+                                                    if (e.target.value) {
+                                                        handleCopyPermissions(e.target.value as ClanRole, role);
+                                                        e.target.value = '';
+                                                    }
+                                                }}
+                                            >
+                                                <option value="">Копия из...</option>
+                                                {ROLES.filter(r => r !== role).map(r => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className={s.permsList}>
                                         {PERMISSIONS_LIST.map(p => (
-                                            <label key={p.key} style={{
-                                                display: 'flex',
-                                                gap: 6,
-                                                alignItems: 'center',
-                                                fontSize: 13
-                                            }}>
+                                            <label key={p.key} className={s.permItem}>
                                                 <input
                                                     type="checkbox"
                                                     checked={currentPerms.includes(p.key)}
                                                     onChange={e => handlePermissionChange(role, p.key, e.target.checked)}
                                                 />
                                                 <Tooltip content={PERMISSION_DESCRIPTIONS[p.key] || p.label}>
-                                                    <span style={{
-                                                        cursor: 'help',
-                                                        borderBottom: '1px dotted #666'
-                                                    }}>{p.label}</span>
+                                                    <span className={s.permLabel}>{p.label}</span>
                                                 </Tooltip>
                                             </label>
                                         ))}

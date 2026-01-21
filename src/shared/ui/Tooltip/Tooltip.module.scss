@@ -6,19 +6,25 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  outline: none;
+
+  &:focus-visible {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
 }
 
 .tooltip {
   position: fixed;
   transform: translate(-50%, -100%);
-  background: #1a1b26;
-  border: 1px solid #414868;
+  background: var(--bg-elev, #1a1b26);
+  border: 1px solid var(--border, #414868);
   padding: 8px 12px;
-  border-radius: 6px;
-  color: #a9b1d6;
+  border-radius: var(--radius-md, 6px);
+  color: var(--text, #a9b1d6);
   font-size: 12px;
   white-space: pre-wrap;
-  z-index: 9999;
+  z-index: var(--z-tooltip, 9999);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   pointer-events: none;
   max-width: 400px;
@@ -33,6 +39,6 @@
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #414868 transparent transparent transparent;
+    border-color: var(--border, #414868) transparent transparent transparent;
   }
 }

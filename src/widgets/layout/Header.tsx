@@ -3,7 +3,7 @@ import {useNavigate} from 'react-router-dom';
 import styles from '@/app/styles/App.module.scss';
 import {useAuth} from '@/app/providers/AuthContext';
 import ColorSettingsModal from '@/features/settings/color/ColorSettingsModal';
-import ThemedSelect, {SelectOption} from '@/components/ui/ThemedSelect';
+import {Select, SelectOption} from '@/shared/ui/Select/Select';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 
 export default function Header() {
@@ -17,7 +17,7 @@ export default function Header() {
 
     const handleSwitch = (val: string) => {
         if (val === 'NEW') {
-            navigate('/create-character');
+            navigate('/settings/characters');
         } else {
             switchCharacter(val);
         }
@@ -43,15 +43,16 @@ export default function Header() {
                                     ...user.characters.map(c => ({
                                         value: c.id,
                                         label: `${c.name}`,
-                                        iconNode: <ClassIcon cls={c.class} size={18} style={{marginRight: 0}}/>,
+                                        icon: <ClassIcon cls={c.class} size={18} style={{marginRight: 0}}/>,
                                     })),
                                     {value: 'NEW', label: '+ Новый персонаж'},
                                 ];
                                 return (
-                                    <ThemedSelect
+                                    <Select
                                         value={activeChar?.id || ''}
                                         options={options}
                                         onChange={(val) => handleSwitch(val)}
+                                        className={styles.characterSelect}
                                     />
                                 );
                             })()}
@@ -67,7 +68,7 @@ export default function Header() {
                         {open && (
                             <div className={styles.dropdown}>
                                 <div className={styles.dropdownItem}
-                                     onClick={() => void navigate('/settings')}>{user.username}</div>
+                                     onClick={() => void navigate('/settings/general')}>{user.username}</div>
                                 <div className={styles.dropdownItem} onClick={() => void logout()}>Выйти</div>
                             </div>
                         )}

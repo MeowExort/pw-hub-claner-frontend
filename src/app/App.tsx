@@ -12,7 +12,6 @@ import ClanManagementPage from '@/pages/ClanManagementPage';
 import ClanSettingsPage from '@/pages/ClanSettingsPage';
 import EventsPage from '@/pages/EventsPage';
 import SettingsPage from '@/pages/SettingsPage';
-import CharacterCreationPage from '@/pages/CharacterCreationPage';
 import ClansListPage from '@/pages/ClansListPage';
 import PublicProfilePage from '@/pages/PublicProfilePage';
 import ClanAuditPage from '@/pages/ClanAuditPage';
@@ -33,8 +32,8 @@ function ProtectedRoute({children}: { children: React.ReactNode }) {
 
     if (!user) return <Navigate to="/login" replace/>;
 
-    if (user.characters.length === 0 && location.pathname !== '/create-character') {
-        return <Navigate to="/create-character" replace/>;
+    if (user.characters.length === 0 && !location.pathname.startsWith('/settings')) {
+        return <Navigate to="/settings/characters" replace/>;
     }
 
     return <>{children}</>;
@@ -113,8 +112,7 @@ function Shell() {
                         <Route path="/system/populate" element={
                             <ProtectedRoute><RequireAdmin><PopulateDbPage/></RequireAdmin></ProtectedRoute>}/>
                         <Route path="/settings" element={<ProtectedRoute><SettingsPage/></ProtectedRoute>}/>
-                        <Route path="/create-character"
-                               element={<ProtectedRoute><CharacterCreationPage/></ProtectedRoute>}/>
+                        <Route path="/settings/:tab" element={<ProtectedRoute><SettingsPage/></ProtectedRoute>}/>
                         <Route path="/login" element={<LoginPage/>}/>
                         <Route path="/profile/:id" element={<PublicProfilePage/>}/>
                         <Route path="/c/:id" element={<PublicProfilePage/>}/>

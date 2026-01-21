@@ -24,13 +24,21 @@ export const Tooltip = ({content, children, className}: TooltipProps) => {
         }
     };
 
+    const handleFocus = () => {
+        handleMouseEnter();
+    };
+
     return (
         <>
             <div
                 ref={triggerRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={() => setVisible(false)}
+                onFocus={handleFocus}
+                onBlur={() => setVisible(false)}
                 className={`${s.trigger} ${className || ''}`}
+                tabIndex={0}
+                aria-haspopup="true"
             >
                 {children}
             </div>
@@ -38,6 +46,7 @@ export const Tooltip = ({content, children, className}: TooltipProps) => {
                 <div
                     className={s.tooltip}
                     style={{left: coords.left, top: coords.top}}
+                    role="tooltip"
                 >
                     {content}
                 </div>,

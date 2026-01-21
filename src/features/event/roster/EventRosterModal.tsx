@@ -7,15 +7,18 @@ import CharacterTooltip from '@/shared/ui/CharacterTooltip/CharacterTooltip';
 import {socket} from '@/shared/api/socket';
 import {useAuth} from '@/app/providers/AuthContext';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
+import {formatNumber} from '@/shared/lib/number';
 import {addMemberToSquad} from './rosterUtils';
 import {calculateCharacterPower} from '@/shared/lib/power';
 
 export default function EventRosterModal({eventId, onClose}: { eventId: string; onClose: () => void }) {
-    const {events, hasPermission, getClanRoster} = useAppStore();
+    const {events, historyEvents, hasPermission, getClanRoster} = useAppStore();
     const {notify} = useToast();
     const {user} = useAuth();
-    const ev = events.find(e => e.id === eventId);
-    const canEdit = hasPermission('CAN_MANAGE_SQUADS');
+    const ev = [...events, ...historyEvents].find(e => e.id === eventId);
+    
+    const isPast = ev ? new Date(ev.date) < new Date() : false;
+    const canEdit = hasPermission('CAN_MANAGE_SQUADS') && !isPast;
 
     const [rosterMap, setRosterMap] = useState<Record<string, Character & ClanMember>>({});
     const [loadingRoster, setLoadingRoster] = useState(false);
@@ -345,7 +348,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                             <div title="Не буду"><span style={{color: '#f87171', fontWeight: 600}}>✕</span> {globalStats.notGoing}</div>
                             <div title="Без отметок"><span style={{color: '#fbbf24', fontWeight: 600}}>?</span> {globalStats.undecided}</div>
                             <div style={{borderLeft: '1px solid #333', paddingLeft: 12}}>Отрядов: <b>{globalStats.totalSquads}</b></div>
-                            <div>Средняя сила: <b>{Math.round(globalStats.avgPower).toLocaleString('ru-RU')}</b></div>
+                            <div>Средняя сила: <b>{formatNumber(Math.round(globalStats.avgPower))}</b></div>
                         </div>
                         {canEdit && <button className="btn secondary" onClick={addSquad}>+ Отряд</button>}
                         <button className="btn secondary" onClick={onClose}>Закрыть</button>
@@ -584,7 +587,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                 justifyContent: 'space-between'
                                             }}>
                                                 <div style={{color: '#ff9e64', fontWeight: 600, display: 'flex', alignItems: 'center'}}>
-                                                    Сила: {stats?.totalPower.toLocaleString('ru-RU')}
+                                                    Сила: {formatNumber(stats?.totalPower || 0)}
                                                     {isStrong && <span title="Слишком сильный отряд" style={{marginLeft: 4}}>🔥</span>}
                                                     {isWeak && <span title="Слишком слабый отряд" style={{marginLeft: 4}}>❄️</span>}
                                                 </div>

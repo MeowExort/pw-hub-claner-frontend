@@ -1,21 +1,28 @@
 .container {
   position: relative;
   cursor: help;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary);
+    border-radius: var(--radius-sm, 4px);
+  }
 }
 
 .tooltip {
   /* Position controlled via inline styles (Portal) */
-  background: #1a1b26;
-  border: 1px solid #414868;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #a9b1d6;
-  font-size: 12px;
+  background: var(--bg-elev, #1a1b26);
+  border: 1px solid var(--border, #414868);
+  padding: 16px;
+  border-radius: var(--radius-md, 6px);
+  color: var(--text, #a9b1d6);
+  font-size: 13px;
   white-space: nowrap;
-  z-index: 9999;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: var(--z-tooltip, 1100);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   pointer-events: none;
-  min-width: 200px;
+  min-width: 520px;
+  line-height: 1.4;
 
   &::after {
     content: '';
@@ -25,13 +32,62 @@
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #414868 transparent transparent transparent;
+    border-color: var(--border, #414868) transparent transparent transparent;
   }
 
   &[data-placement="bottom"]::after {
     top: auto;
     bottom: 100%;
-    border-color: transparent transparent #414868 transparent;
+    border-color: transparent transparent var(--border, #414868) transparent;
+  }
+}
+
+.columns {
+  display: flex;
+  gap: 24px;
+}
+
+.column {
+  flex: 1;
+  min-width: 220px;
+}
+
+.powerComponent {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-align: left !important;
+
+  [class*="powerLabel"] {
+    text-align: left;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text, #fff);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  [class*="powerValue"] {
+    font-size: 20px !important;
+    text-align: left;
+    text-shadow: none !important;
+    color: #ff9e64 !important;
+    font-weight: 700;
+  }
+
+  [class*="detailsToggle"] {
+    display: none;
+  }
+
+  [class*="statsGrid"] {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 }
 
@@ -48,12 +104,13 @@
 
 .divider {
   height: 1px;
-  background: #414868;
-  margin: 4px 0;
+  background: var(--border, #414868);
+  margin: 8px 0;
 }
 
 .header {
   font-weight: 700;
-  margin-bottom: 6px;
-  color: #fff;
+  margin-bottom: 8px;
+  color: var(--text, #fff);
+  font-size: 14px;
 }

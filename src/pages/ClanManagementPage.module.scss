@@ -1,65 +1,4 @@
-.tooltipContainer {
-  position: relative;
-  cursor: help;
 
-  &:hover .tooltip {
-    visibility: visible;
-    opacity: 1;
-  }
-}
-
-.tooltip {
-  visibility: hidden;
-  opacity: 0;
-  position: absolute;
-  bottom: 100%;
-  /* Changed from centered to right-aligned to prevent overlap with card tooltip */
-  right: 0;
-  left: auto;
-  transform: none;
-  background: #1a1b26;
-  border: 1px solid #414868;
-  padding: 8px 12px;
-  border-radius: 6px;
-  color: #a9b1d6;
-  font-size: 12px;
-  white-space: nowrap;
-  z-index: 100;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  transition: opacity 0.2s;
-  pointer-events: none;
-  min-width: 200px;
-  margin-bottom: 8px;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    /* Arrow on the right side to match right alignment */
-    right: 15px;
-    left: auto;
-    margin-left: 0;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #414868 transparent transparent transparent;
-  }
-}
-
-.statRow {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.divider {
-  height: 1px;
-  background: #414868;
-  margin: 4px 0;
-}
 
 .cardHover {
   position: relative;
@@ -127,4 +66,155 @@
   button {
     flex: 1;
   }
+}
+
+.rosterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.memberCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &:hover {
+    border-color: rgba(122, 162, 247, 0.5);
+    background: rgba(122, 162, 247, 0.02);
+    transform: translateY(-2px);
+
+    .kickBtn, .actionBtns {
+      opacity: 1;
+    }
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.nameSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.charName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roleBadge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(122, 162, 247, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(122, 162, 247, 0.2);
+  cursor: default;
+  transition: all 0.2s;
+
+  &.editable {
+    cursor: pointer;
+    &:hover {
+      background: rgba(122, 162, 247, 0.2);
+      border-color: var(--primary);
+    }
+  }
+}
+
+.classInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.kickBtn {
+  opacity: 0;
+  padding: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(247, 118, 142, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(247, 118, 142, 0.2);
+  transition: all 0.2s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--danger);
+    color: white;
+  }
+}
+
+.actionBtns {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.actionBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(122, 162, 247, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(122, 162, 247, 0.2);
+  transition: all 0.2s;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--primary);
+    color: #0b0c10;
+  }
+}
+
+.cardStats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.powerValue {
+  font-weight: 700;
+  color: var(--warning);
+  font-size: 14px;
+}
+
+.levelLabel {
+  font-size: 12px;
+  color: var(--muted);
 }

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi } from '@/shared/api';
+import { formatNumber } from '@/shared/lib/number';
 import styles from '@/app/styles/App.module.scss';
+import adm from './Admin.module.scss';
 
 interface Stats {
   users: {
@@ -47,76 +49,78 @@ export default function AdminStatsPage() {
   };
 
   if (loading) return <div className={styles.loading}>Загрузка статистики...</div>;
-  if (error) return <div className={styles.error} style={{ padding: 20 }}>{error}</div>;
+  if (error) return <div className={adm.page}><div className={styles.error}>{error}</div></div>;
   if (!stats) return null;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2 className={styles.pageTitle} style={{ marginBottom: 20 }}>Админ-панель: Статистика</h2>
+    <div className={adm.page}>
+      <h2 className={styles.pageTitle}>Админ-панель: Статистика</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}>
+      <div className={adm.statsGrid}>
         
         {/* Аккаунты */}
-        <div className="card" style={{ padding: 20, background: 'var(--surface)', borderRadius: 8 }}>
-          <h3 style={{ marginTop: 0 }}>Аккаунты</h3>
-          <div style={{ fontSize: 24, fontWeight: 'bold' }}>{stats.users.total}</div>
-          <div style={{ color: 'var(--muted)', fontSize: 14 }}>Всего пользователей</div>
-          <div style={{ marginTop: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div className={adm.statCard}>
+          <h3 className={adm.statTitle}>Аккаунты</h3>
+          <div className={adm.statValue}>{formatNumber(stats.users.total)}</div>
+          <div className={adm.statMuted}>Всего пользователей</div>
+          <div className={adm.statList}>
+            <div className={adm.statItem}>
               <span>Онлайн (15м):</span>
-              <span style={{ color: 'var(--accent-green)', fontWeight: 'bold' }}>{stats.users.online}</span>
+              <span className={adm.online}>{formatNumber(stats.users.online)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className={adm.statItem}>
               <span>С Telegram:</span>
-              <span>{stats.users.withTelegram}</span>
+              <span>{formatNumber(stats.users.withTelegram)}</span>
             </div>
           </div>
         </div>
 
         {/* Кланы */}
-        <div className="card" style={{ padding: 20, background: 'var(--surface)', borderRadius: 8 }}>
-          <h3 style={{ marginTop: 0 }}>Кланы</h3>
-          <div style={{ fontSize: 24, fontWeight: 'bold' }}>{stats.clans.total}</div>
-          <div style={{ color: 'var(--muted)', fontSize: 14 }}>Зарегистрировано кланов</div>
+        <div className={adm.statCard}>
+          <h3 className={adm.statTitle}>Кланы</h3>
+          <div className={adm.statValue}>{formatNumber(stats.clans.total)}</div>
+          <div className={adm.statMuted}>Зарегистрировано кланов</div>
         </div>
 
         {/* Персонажи */}
-        <div className="card" style={{ padding: 20, background: 'var(--surface)', borderRadius: 8 }}>
-          <h3 style={{ marginTop: 0 }}>Персонажи</h3>
-          <div style={{ fontSize: 24, fontWeight: 'bold' }}>{stats.characters.total}</div>
-          <div style={{ color: 'var(--muted)', fontSize: 14 }}>Всего персонажей</div>
-          <div style={{ marginTop: 10, maxHeight: 150, overflow: 'auto' }}>
+        <div className={adm.statCard}>
+          <h3 className={adm.statTitle}>Персонажи</h3>
+          <div className={adm.statValue}>{formatNumber(stats.characters.total)}</div>
+          <div className={adm.statMuted}>Всего персонажей</div>
+          <div className={adm.statList}>
             <h4 style={{ margin: '5px 0' }}>По классам:</h4>
-            {stats.characters.byClass.map(c => (
-              <div key={c.class} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span>{c.class}:</span>
-                <span>{c._count}</span>
-              </div>
-            ))}
+            <div className={adm.classList}>
+              {stats.characters.byClass.map(c => (
+                <div key={c.class} className={adm.statItem}>
+                  <span>{c.class}:</span>
+                  <span>{formatNumber(c._count)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* События */}
-        <div className="card" style={{ padding: 20, background: 'var(--surface)', borderRadius: 8 }}>
-          <h3 style={{ marginTop: 0 }}>События</h3>
-          <div style={{ fontSize: 24, fontWeight: 'bold' }}>{stats.events.total}</div>
-          <div style={{ color: 'var(--muted)', fontSize: 14 }}>Всего создано</div>
-          <div style={{ marginTop: 10 }}>
+        <div className={adm.statCard}>
+          <h3 className={adm.statTitle}>События</h3>
+          <div className={adm.statValue}>{formatNumber(stats.events.total)}</div>
+          <div className={adm.statMuted}>Всего создано</div>
+          <div className={adm.statList}>
             <h4 style={{ margin: '5px 0' }}>По типам:</h4>
             {stats.events.byType.map(t => (
-              <div key={t.type} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+              <div key={t.type} className={adm.statItem}>
                 <span>{t.type}:</span>
-                <span>{t._count}</span>
+                <span>{formatNumber(t._count)}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Отчеты/Задачи */}
-        <div className="card" style={{ padding: 20, background: 'var(--surface)', borderRadius: 8 }}>
-          <h3 style={{ marginTop: 0 }}>Система</h3>
-          <div style={{ fontSize: 24, fontWeight: 'bold' }}>{stats.reports.totalTaskLogs}</div>
-          <div style={{ color: 'var(--muted)', fontSize: 14 }}>Записей в логах задач</div>
+        <div className={adm.statCard}>
+          <h3 className={adm.statTitle}>Система</h3>
+          <div className={adm.statValue}>{formatNumber(stats.reports.totalTaskLogs)}</div>
+          <div className={adm.statMuted}>Записей в логах задач</div>
           <button 
             className="btn" 
             style={{ marginTop: 15, width: '100%' }}

@@ -3,8 +3,9 @@ import {useParams, useNavigate} from 'react-router-dom';
 import {Character} from '@/shared/types';
 import {userApi} from '@/shared/api';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
+import {CharacterPower} from '@/entities/character/ui/CharacterPower';
 import styles from '@/app/styles/App.module.scss';
-import {calculatePowerDetails} from '@/shared/lib/power';
+import CharacterHistoryModal from '@/features/settings/character/CharacterHistoryModal';
 
 export default function PublicProfilePage() {
     const {id} = useParams<{ id: string }>();
@@ -12,6 +13,7 @@ export default function PublicProfilePage() {
     const [char, setChar] = useState<Character | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showHistory, setShowHistory] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -32,16 +34,19 @@ export default function PublicProfilePage() {
         </div>
     );
 
-    const details = calculatePowerDetails(char);
-
     return (
         <div style={{maxWidth: 800, margin: '0 auto', padding: '20px'}}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px'}}>
-                <ClassIcon cls={char.class} size={48}/>
-                <div>
-                    <h1 style={{margin: 0}}>{char.name}</h1>
-                    <div style={{color: 'var(--muted)'}}>{char.class} • {char.server} • {char.level} ур.</div>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+                    <ClassIcon cls={char.class} size={48}/>
+                    <div>
+                        <h1 style={{margin: 0}}>{char.name}</h1>
+                        <div style={{color: 'var(--muted)'}}>{char.class} • {char.server} • {char.level} ур.</div>
+                    </div>
                 </div>
+                <button className="btn secondary" onClick={() => setShowHistory(true)}>
+                    📜 История версий
+                </button>
             </div>
 
             <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
@@ -66,25 +71,42 @@ export default function PublicProfilePage() {
                 </div>
 
                 <div className="card">
-                    <h3 style={{marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '10px', color: '#ff9e64'}}>Боевая мощь</h3>
-                    <div style={{textAlign: 'center', padding: '20px 0'}}>
-                        <div style={{fontSize: '3rem', fontWeight: 800, color: '#ff9e64'}}>
-                            {details.total.toLocaleString('ru-RU')}
-                        </div>
-                        <div style={{color: 'var(--muted)', fontSize: '0.9rem'}}>Расчетный показатель силы</div>
-                    </div>
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem'}}>
-                        <StatRow label="Базовый урон (ср.)" value={Math.round(details.baseAvgDamage)}/>
-                        <StatRow label="Множитель крита" value={`x${details.multipliers.crit.toFixed(2)}`}/>
-                        <StatRow label="Множитель ПА" value={`x${details.multipliers.attackLevel.toFixed(2)}`}/>
-                        <StatRow label="Множитель БД" value={`x${details.multipliers.spirit.toFixed(2)}`}/>
-                        <StatRow label="Множитель пробива" value={`x${details.multipliers.penetration.toFixed(2)}`}/>
-                        <StatRow label="Скорость" value={`x${(details.isPhysical ? details.attackRate : (details.multipliers.castSpeed || 1)).toFixed(2)}`}/>
-                    </div>
+                    <h3 style={{
+                        marginTop: 0,
+                        borderBottom: '1px solid var(--border)',
+                        paddingBottom: '0.5rem',
+                        color: 'var(--warning)'
+                    }}>Боевая мощь</h3>
+
+                    <CharacterPower
+                        character={char}
+                        style={{marginTop: '1rem', padding: '20px', marginBottom: '1.5rem'}}
+                    />
+
                     {char.pwobsLink && (
-                        <div style={{marginTop: '20px', textAlign: 'center'}}>
-                            <a href={char.pwobsLink} target="_blank" rel="noreferrer" className="btn secondary" style={{width: '100%'}}>
-                                Профиль на pwobs.com
+                        <div style={{marginTop: '1.5rem'}}>
+                            <div style={{color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '0.5rem'}}>
+                                Ссылка PwObs
+                            </div>
+                            <a
+                                href={char.pwobsLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                    color: 'var(--primary)',
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    fontSize: '0.9rem',
+                                    background: 'rgba(255,255,255,0.03)',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid var(--border)'
+                                }}
+                                title={char.pwobsLink}
+                            >
+                                {char.pwobsLink}
                             </a>
                         </div>
                     )}
@@ -102,6 +124,15 @@ export default function PublicProfilePage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showHistory && (
+                <CharacterHistoryModal
+                    characterId={char.id}
+                    characterName={char.name}
+                    onClose={() => setShowHistory(false)}
+                    isPublic={true}
+                />
             )}
         </div>
     );

@@ -4,6 +4,7 @@ import {useAppStore} from '@/shared/model/AppStore';
 import {useToast} from '@/app/providers/ToastContext';
 import {clanApi} from '@/shared/api';
 import {generateBannerGradient} from '@/shared/lib/color';
+import {formatNumber} from '@/shared/lib/number';
 import type {CharacterClass, ClanEvent, ClanMember} from '@/shared/types';
 import UploadProgressModal from './UploadProgressModal';
 import ReportInstructionModal from './ReportInstructionModal';
@@ -193,7 +194,7 @@ export default function ClanPanel() {
                     <div>
                         <div className={s.statItem}>
                             <span>Очки доблести:</span>
-                            <span>{(totalValor ?? 0).toLocaleString()}</span>
+                            <span>{formatNumber(totalValor ?? 0)}</span>
                         </div>
                         <div className={s.statItem}>
                             <span>Участников:</span>

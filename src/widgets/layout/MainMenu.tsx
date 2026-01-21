@@ -13,8 +13,8 @@ export default function MainMenu() {
             <nav className={styles.menu}>
                 <NavLink to="/clans"
                          className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Кланы</NavLink>
-                <NavLink to="/settings"
-                         className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Настройки</NavLink>
+                <NavLink to="/settings/general"
+                         className={({isActive}) => isActive || window.location.pathname.startsWith('/settings') ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Настройки</NavLink>
                 {user?.role === 'ADMIN' && (
                     <>
                         <NavLink to="/admin/stats"
@@ -54,8 +54,8 @@ export default function MainMenu() {
                              className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>БД</NavLink>
                 </>
             )}
-            <NavLink to="/settings"
-                     className={({isActive}) => isActive ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Настройки</NavLink>
+            <NavLink to="/settings/general"
+                     className={({isActive}) => isActive || window.location.pathname.startsWith('/settings') ? `${styles.menuItem} ${styles.menuItemActive}` : styles.menuItem}>Настройки</NavLink>
         </nav>
     );
 }

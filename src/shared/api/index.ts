@@ -51,6 +51,11 @@ export const userApi = {
         return handleResponse(res);
     },
 
+    getPublicCharacterHistory: async (id: string): Promise<any[]> => {
+        const res = await fetch(`${API_URL}/users/public/characters/${id}/history`);
+        return handleResponse(res);
+    },
+
     createCharacter: async (payload: Omit<Character, 'id'>): Promise<Character> => {
         const res = await fetch(`${API_URL}/users/me/characters`, {
             method: 'POST',
@@ -139,6 +144,23 @@ export const userApi = {
             body: JSON.stringify(dto)
         });
         return handleResponse(res);
+    },
+
+    getCharacterHistory: async (id: string): Promise<any[]> => {
+        const res = await fetch(`${API_URL}/users/characters/${id}/history`, {
+            headers: getHeaders(),
+        });
+        return handleResponse(res);
+    },
+
+    updateAnyCharacter: async (payload: Partial<Character> & { id: string }): Promise<Character> => {
+        const {id, ...body} = payload;
+        const res = await fetch(`${API_URL}/users/characters/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(body),
+        });
+        return handleResponse(res);
     }
 };
 
@@ -202,6 +224,14 @@ export const clanApi = {
             body: JSON.stringify({role})
         });
         return handleResponse(res);
+    },
+    kickMember: async (clanId: string, memberId: string) => {
+        const res = await fetch(`${API_URL}/clans/${clanId}/members/${memberId}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        if (res.ok) return;
+        await handleResponse(res);
     },
     updateRolePermissions: async (id: string, payload: { role: string, permissions: string[] }) => {
         const res = await fetch(`${API_URL}/clans/${id}/permissions`, {
@@ -286,8 +316,12 @@ export const clanApi = {
 };
 
 export const eventsApi = {
-    listEvents: async (): Promise<ClanEvent[]> => {
-        const res = await fetch(`${API_URL}/events`, {headers: getHeaders()});
+    listEvents: async (options?: { limit?: number; offset?: number; history?: boolean }): Promise<ClanEvent[]> => {
+        const params = new URLSearchParams();
+        if (options?.limit) params.append('limit', options.limit.toString());
+        if (options?.offset) params.append('offset', options.offset.toString());
+        if (options?.history) params.append('history', 'true');
+        const res = await fetch(`${API_URL}/events?${params.toString()}`, {headers: getHeaders()});
         return handleResponse(res);
     },
     createEvent: async (payload: any) => {

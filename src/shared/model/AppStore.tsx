@@ -16,8 +16,12 @@ import {startOfIsoWeek} from '@/shared/lib/date';
 interface AppStoreValue {
     clan: Clan | null;
     events: ClanEvent[];
+    historyEvents: ClanEvent[];
     loading: boolean;
+    loadingHistory: boolean;
+    hasMoreHistory: boolean;
     refreshAll: (silent?: boolean, weekIso?: string) => Promise<void>;
+    loadMoreHistory: () => Promise<void>;
     createClan: (name: string, icon: string, description: string) => Promise<void>;
     applyToClan: (clanId: string, message?: string) => Promise<void>;
     leaveClan: (clanId: string) => Promise<void>;
@@ -42,6 +46,7 @@ interface AppStoreValue {
     getApplications: () => Promise<ClanApplication[]>;
     processApplication: (appId: string, decision: 'APPROVE' | 'REJECT') => Promise<void>;
     changeMemberRole: (memberId: string, role: string) => Promise<void>;
+    kickMember: (memberId: string) => Promise<void>;
     hasPermission: (permission: string) => boolean;
 }
 
@@ -51,8 +56,11 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
     const {user} = useAuth();
     const [clan, setClan] = useState<Clan | null>(null);
     const [events, setEvents] = useState<ClanEvent[]>([]);
+    const [historyEvents, setHistoryEvents] = useState<ClanEvent[]>([]);
     const [permissions, setPermissions] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+    const [hasMoreHistory, setHasMoreHistory] = useState(true);
     const {notify} = useToast();
     const weeklyEventsChecked = React.useRef(false);
     const currentWeekIso = React.useRef<string | undefined>(undefined);
@@ -97,9 +105,14 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
             const targetWeek = weekIso || currentWeekIso.current;
             const [c, ev, perms] = await Promise.all([
                 userApi.getMyClan(targetWeek),
-                eventsApi.listEvents(),
+                eventsApi.listEvents({ history: false }),
                 userApi.getMyPermissions()
             ]);
+
+            setEvents(ev);
+            setHistoryEvents([]); // Reset history on refresh
+            setHasMoreHistory(true);
+            setLoadingHistory(false);
 
             if (c && (!c.members || c.members.length === 0)) {
                 try {
@@ -283,11 +296,43 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         refreshAll().catch(err => console.error('Background refresh failed', err));
     }, [clan, notify, refreshAll]);
 
+    const kickMember = useCallback(async (memberId: string) => {
+        if (!clan) return;
+        await clanApi.kickMember(clan.id, memberId);
+        notify('Персонаж исключен из клана', 'success');
+        refreshAll().catch(err => console.error('Background refresh failed', err));
+    }, [clan, notify, refreshAll]);
+
+    const loadMoreHistory: AppStoreValue['loadMoreHistory'] = useCallback(async () => {
+        if (loadingHistory || !hasMoreHistory) return;
+        setLoadingHistory(true);
+        try {
+            const limit = 10;
+            const ev = await eventsApi.listEvents({
+                limit,
+                offset: historyEvents.length,
+                history: true
+            });
+            if (ev.length < limit) {
+                setHasMoreHistory(false);
+            }
+            setHistoryEvents(prev => [...prev, ...ev]);
+        } catch (e) {
+            console.error('Failed to load history', e);
+        } finally {
+            setLoadingHistory(false);
+        }
+    }, [historyEvents.length, loadingHistory, hasMoreHistory]);
+
     const value = useMemo<AppStoreValue>(() => ({
         clan,
         events,
+        historyEvents,
         loading,
+        loadingHistory,
+        hasMoreHistory,
         refreshAll,
+        loadMoreHistory,
         createClan,
         updateClanSettings,
         createEvent,
@@ -305,10 +350,11 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         getApplications,
         processApplication,
         changeMemberRole,
+        kickMember,
         hasPermission
     }), [
-        clan, events, loading, refreshAll, createClan, updateClanSettings, createEvent, rsvp, setSquads, deleteEvent, updatePermissions, setRhythmReportUploadedThisWeek, setForbiddenReportUploadedThisWeek, resolveCharacterNames, getClanRoster,
-        applyToClan, leaveClan, listClans, getApplications, processApplication, changeMemberRole, permissions
+        clan, events, historyEvents, loading, loadingHistory, hasMoreHistory, refreshAll, loadMoreHistory, createClan, updateClanSettings, createEvent, rsvp, setSquads, deleteEvent, updatePermissions, setRhythmReportUploadedThisWeek, setForbiddenReportUploadedThisWeek, resolveCharacterNames, getClanRoster,
+        applyToClan, leaveClan, listClans, getApplications, processApplication, changeMemberRole, kickMember, permissions
     ]);
 
     return <AppStore.Provider value={value}>{children}</AppStore.Provider>;

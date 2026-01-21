@@ -2,13 +2,18 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import styles from '@/app/styles/App.module.scss';
 import s from './ClanManagementPage.module.scss';
+import {Modal} from '@/shared/ui/Modal/Modal';
 import {useAppStore} from '@/shared/model/AppStore';
 import {useAuth} from '@/app/providers/AuthContext';
 import {useToast} from '@/app/providers/ToastContext';
 import type {Character, CharacterClass, ClanApplication, ClanMember} from '@/shared/types';
 import {calculatePowerDetails} from '@/shared/lib/power';
+import {formatNumber} from '@/shared/lib/number';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 import CharacterTooltip from '@/shared/ui/CharacterTooltip/CharacterTooltip';
+import CharacterFormModal from '@/features/settings/character/CharacterFormModal';
+import CharacterHistoryModal from '@/features/settings/character/CharacterHistoryModal';
+import VersionComparison from '@/features/settings/character/VersionComparison';
 
 type RosterItem = Character & ClanMember;
 
@@ -41,7 +46,8 @@ export default function ClanManagementPage() {
         processApplication,
         resolveCharacterNames,
         hasPermission,
-        changeMemberRole
+        changeMemberRole,
+        kickMember
     } = useAppStore();
     const navigate = useNavigate();
     const [roster, setRoster] = useState<RosterItem[]>([]);
@@ -51,11 +57,17 @@ export default function ClanManagementPage() {
     const [searchName, setSearchName] = useState('');
     const [sortBy, setSortBy] = useState<'POWER_DESC' | 'POWER_ASC' | 'NAME_DESC' | 'NAME_ASC' | 'ROLE_DESC' | 'ROLE_ASC'>('POWER_DESC');
     const [promoteModal, setPromoteModal] = useState<{ char: RosterItem, role: string } | null>(null);
+    const [kickConfirm, setKickConfirm] = useState<RosterItem | null>(null);
+    const [editCharModal, setEditCharModal] = useState<RosterItem | null>(null);
+    const [historyModal, setHistoryModal] = useState<RosterItem | null>(null);
     const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+    const [isKicking, setIsKicking] = useState(false);
 
     const canManageApps = hasPermission('CAN_MANAGE_MEMBERS');
     const canManageRoles = hasPermission('MANAGE_ROLES');
+    const canKickMembers = hasPermission('CAN_KICK_MEMBERS');
     const canViewAudit = hasPermission('CAN_VIEW_LOGS');
+    const canEditChars = hasPermission('CAN_EDIT_CHARACTERS');
 
     const myRole = useMemo(() => roster.find(m => m.id === user?.mainCharacterId)?.role, [roster, user]);
     const myLevel = myRole ? getRoleLevel(myRole) : -1;
@@ -134,13 +146,11 @@ export default function ClanManagementPage() {
                 <div style={{display: 'flex', gap: 10}}>
                     {canViewAudit && (
                         <button className="btn"
-                                style={{background: '#7aa2f7', color: '#fff', padding: '6px 12px', fontSize: 14}}
                                 onClick={() => navigate('/clan/audit')}>
                             Аудит
                         </button>
                     )}
-                    <button className="btn"
-                            style={{background: '#f7768e', color: '#fff', padding: '6px 12px', fontSize: 14}}
+                    <button className="btn secondary"
                             onClick={() => {
                                 if (confirm('Выйти из клана?')) leaveClan(clan.id)
                             }}>
@@ -190,7 +200,7 @@ export default function ClanManagementPage() {
                                             }}>
                                                 <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
                                                     <span style={{color: 'var(--muted)'}}>Сила:</span>
-                                                    <span style={{fontWeight: 700, color: '#ff9e64'}}>{power.toLocaleString('ru-RU')}</span>
+                                                    <span className={s.powerValue}>{formatNumber(power)}</span>
                                                 </div>
                                                 <a 
                                                     href={`/c/${info.shortId || info.id}`} 
@@ -209,19 +219,19 @@ export default function ClanManagementPage() {
                                             {app.votes && app.votes.length > 0 && (
                                                 <div style={{width: '100%'}}>
                                                     <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4}}>
-                                                        <span style={{color: '#9ece6a', fontWeight: 600}}>👍 {app.votes.filter(v => v.vote === 1).length}</span>
-                                                        <span style={{color: '#f7768e', fontWeight: 600}}>{app.votes.filter(v => v.vote === -1).length} 👎</span>
+                                                        <span style={{color: 'var(--success)', fontWeight: 600}}>👍 {app.votes.filter(v => v.vote === 1).length}</span>
+                                                        <span style={{color: 'var(--danger)', fontWeight: 600}}>{app.votes.filter(v => v.vote === -1).length} 👎</span>
                                                     </div>
-                                                    <div style={{height: 6, background: '#1a1b26', borderRadius: 3, overflow: 'hidden', display: 'flex'}}>
+                                                    <div style={{height: 6, background: 'var(--bg)', borderRadius: 3, overflow: 'hidden', display: 'flex'}}>
                                                         <div style={{
                                                             height: '100%', 
-                                                            background: '#9ece6a', 
+                                                            background: 'var(--success)', 
                                                             width: `${(app.votes.filter(v => v.vote === 1).length / app.votes.length) * 100}%`,
                                                             transition: 'width 0.3s ease'
                                                         }} />
                                                         <div style={{
                                                             height: '100%', 
-                                                            background: '#f7768e', 
+                                                            background: 'var(--danger)', 
                                                             flexGrow: 1,
                                                             transition: 'flex-grow 0.3s ease'
                                                         }} />
@@ -231,11 +241,11 @@ export default function ClanManagementPage() {
 
                                             {canManageApps && (
                                                 <div className={s.appActions} onClick={e => e.stopPropagation()}>
-                                                    <button className="btn" style={{background: '#9ece6a', color: '#000'}}
+                                                    <button className="btn" 
                                                             onClick={() => handleProcess(app.id, 'APPROVE')}>
                                                         Принять
                                                     </button>
-                                                    <button className="btn" style={{background: '#f7768e', color: '#fff'}}
+                                                    <button className="btn secondary"
                                                             onClick={() => handleProcess(app.id, 'REJECT')}>
                                                         Отклонить
                                                     </button>
@@ -289,105 +299,82 @@ export default function ClanManagementPage() {
             {loading ? (
                 <div style={{textAlign: 'center', padding: 20}}>Загрузка состава...</div>
             ) : (
-                <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12}}>
+                <div className={s.rosterGrid}>
                     {filtered.map(char => {
                         const details = calculatePowerDetails(char);
+                        const canEditThisRole = canManageRoles && getRoleLevel(char.role) < myLevel;
+
                         return (
                             <CharacterTooltip key={char.id} character={char}>
-                                <div className={`card ${s.cardHover}`}
-                                     style={{display: 'flex', flexDirection: 'column', gap: 4}}>
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'flex-start'
-                                    }}>
-                                        <div style={{fontWeight: 700, fontSize: 16, display: 'flex', alignItems: 'center'}}>
-                                            <ClassIcon cls={char.class} size={18}/>
-                                            {char.name}
-                                        </div>
-                                        {canManageRoles && getRoleLevel(char.role) < myLevel ? (
-                                            <button
-                                                className="btn secondary"
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    const currentRoleLevel = getRoleLevel(char.role);
-                                                    // If current role is already higher or equal to mine, I shouldn't even see the edit button
-                                                    // but let's double check and provide a safe default role in modal if current is not available
-                                                    const initialRole = currentRoleLevel < myLevel ? char.role : 'MEMBER';
-                                                    setPromoteModal({char, role: initialRole});
-                                                }}
-                                                style={{
-                                                    fontSize: 12,
-                                                    padding: '2px 8px',
-                                                    height: 'auto',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 4
-                                                }}
-                                                title="Изменить роль"
-                                            >
-                                                <span>{char.role}</span>
-                                                <span>✎</span>
-                                            </button>
-                                        ) : (
-                                            <div style={{
-                                                fontSize: 12,
-                                                background: '#2b2b3b',
-                                                padding: '2px 6px',
-                                                borderRadius: 4
-                                            }}>{char.role}</div>
-                                        )}
-                                    </div>
-                                    <div style={{color: '#7aa2f7', fontSize: 13, display: 'flex', alignItems: 'center'}}>
-                                        {char.class}
-                                    </div>
-                                    <div style={{fontSize: 12, color: 'var(--muted)'}}>Уровень: {char.level || 1}</div>
-
-                                    <div style={{
-                                        marginTop: 8,
-                                        paddingTop: 8,
-                                        borderTop: '1px solid var(--border)',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}>
-                                        <span style={{fontSize: 12}}>Сила</span>
-                                        <div className={s.tooltipContainer}>
-                                            <span style={{
-                                                fontWeight: 700,
-                                                color: '#ff9e64'
-                                            }}>{details.total.toLocaleString('ru-RU')}</span>
-                                            {/* Power Breakdown Tooltip */}
-                                            <div className={s.tooltip}>
+                                <div className={s.memberCard}>
+                                    <div className={s.cardHeader}>
+                                        <div className={s.nameSection}>
+                                            <div className={s.nameRow}>
+                                                <ClassIcon cls={char.class} size={18} className={styles.classIconSmall}/>
+                                                <span className={s.charName}>{char.name}</span>
+                                            </div>
+                                            <div className={s.classInfo}>
                                                 <div
-                                                    style={{fontWeight: 700, marginBottom: 6, color: '#ff9e64'}}>Детализация
-                                                    силы
+                                                    className={`${s.roleBadge} ${canEditThisRole ? s.editable : ''}`}
+                                                    onClick={(e) => {
+                                                        if (canEditThisRole) {
+                                                            e.stopPropagation();
+                                                            setPromoteModal({char, role: char.role});
+                                                        }
+                                                    }}
+                                                    title={canEditThisRole ? "Изменить роль" : undefined}
+                                                >
+                                                    {char.role}
+                                                    {canEditThisRole && <span style={{marginLeft: 4}}>✎</span>}
                                                 </div>
-                                                <div className={s.statRow}><span>Тип урона:</span>
-                                                    <span>{details.isPhysical ? 'Физ.' : 'Маг.'}</span></div>
-                                                <div className={s.statRow}><span>База (ср.):</span>
-                                                    <span>{Math.round(details.baseAvgDamage)}</span></div>
-                                                <div className={s.statRow}><span>Множ. крита:</span>
-                                                    <span>x{details.multipliers.crit.toFixed(2)}</span></div>
-                                                <div className={s.statRow}><span>Множ. ПА:</span>
-                                                    <span>x{details.multipliers.attackLevel.toFixed(2)}</span></div>
-                                                <div className={s.statRow}><span>Множ. БД:</span>
-                                                    <span>x{details.multipliers.spirit.toFixed(2)}</span></div>
-                                                <div className={s.statRow}><span>Множ. пробива:</span>
-                                                    <span>x{details.multipliers.penetration.toFixed(2)}</span></div>
-                                                {details.isPhysical ? (
-                                                    <div className={s.statRow}><span>Скорость:</span>
-                                                        <span>x{details.attackRate.toFixed(2)}</span></div>
-                                                ) : (
-                                                    <div className={s.statRow}><span>Скорость каста:</span>
-                                                        <span>x{(details.multipliers.castSpeed || 1).toFixed(2)}</span>
-                                                    </div>
-                                                )}
-                                                <div className={s.divider}/>
-                                                <div className={s.statRow}><span>DPS (raw):</span>
-                                                    <span>{Math.round(details.rawDps).toLocaleString()}</span></div>
+                                                <span>•</span>
+                                                <span>{char.class}</span>
                                             </div>
                                         </div>
+
+                                        <div className={s.actionBtns} style={{ marginLeft: 'auto' }}>
+                                            {canEditChars && (
+                                                <div style={{display: 'flex', gap: '4px'}}>
+                                                    <button
+                                                        className={s.actionBtn}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditCharModal(char);
+                                                        }}
+                                                        title="Редактировать характеристики"
+                                                    >
+                                                        ✎
+                                                    </button>
+                                                    <button
+                                                        className={s.actionBtn}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setHistoryModal(char);
+                                                        }}
+                                                        title="История изменений"
+                                                    >
+                                                        📜
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {canKickMembers && getRoleLevel(char.role) < myLevel && (
+                                                <button
+                                                    className={s.kickBtn}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setKickConfirm(char);
+                                                    }}
+                                                    title="Исключить из клана"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className={s.cardStats}>
+                                        <span className={s.powerValue}>{formatNumber(details.total)}</span>
                                     </div>
                                 </div>
                             </CharacterTooltip>
@@ -397,38 +384,12 @@ export default function ClanManagementPage() {
             )}
 
             {promoteModal && (
-                <div className="modal-backdrop" onClick={() => setPromoteModal(null)}>
-                    <div className="modal" onClick={e => e.stopPropagation()} style={{width: 300}}>
-                        <div style={{fontWeight: 700, marginBottom: 12}}>Изменение роли</div>
-                        <div style={{marginBottom: 12}}>
-                            Участник: <b>{promoteModal.char.name}</b>
-                        </div>
-                        <div style={{marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8}}>
-                            {['MASTER', 'MARSHAL', 'OFFICER', 'PL', 'MEMBER']
-                                .filter(r => getRoleLevel(r) < myLevel)
-                                .map(r => {
-                                    const isSelected = promoteModal.role === r;
-                                    return (
-                                        <div
-                                            key={r}
-                                            onClick={() => setPromoteModal({...promoteModal, role: r})}
-                                            style={{
-                                                padding: '10px 12px',
-                                                borderRadius: 8,
-                                                border: isSelected ? '1px solid #7aa2f7' : '1px solid var(--border)',
-                                                background: isSelected ? 'rgba(122, 162, 247, 0.1)' : 'var(--card)',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}
-                                        >
-                                            <span style={{fontWeight: isSelected ? 600 : 400}}>{r}</span>
-                                            {isSelected && <span style={{color: '#7aa2f7'}}>✓</span>}
-                                        </div>
-                                    );
-                                })}
-                        </div>
+                <Modal 
+                    isOpen={true} 
+                    onClose={() => setPromoteModal(null)} 
+                    title="Изменение роли"
+                    maxWidth="400px"
+                    footer={
                         <div style={{display: 'flex', gap: 8, justifyContent: 'flex-end'}}>
                             <button className="btn secondary" onClick={() => setPromoteModal(null)}
                                     disabled={isUpdatingRole}>Отмена
@@ -449,8 +410,92 @@ export default function ClanManagementPage() {
                                 }
                             }}>{isUpdatingRole ? 'Сохранение...' : 'Сохранить'}</button>
                         </div>
+                    }
+                >
+                        <div style={{marginBottom: 12}}>
+                            Участник: <b>{promoteModal.char.name}</b>
+                        </div>
+                        <div style={{marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8}}>
+                            {['MASTER', 'MARSHAL', 'OFFICER', 'PL', 'MEMBER']
+                                .filter(r => getRoleLevel(r) < myLevel)
+                                .map(r => {
+                                    const isSelected = promoteModal.role === r;
+                                    return (
+                                        <div
+                                            key={r}
+                                            onClick={() => setPromoteModal({...promoteModal, role: r})}
+                                            style={{
+                                                padding: '10px 12px',
+                                                borderRadius: 8,
+                                                border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                                                background: isSelected ? 'rgba(122, 162, 247, 0.1)' : 'var(--card)',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            <span style={{fontWeight: isSelected ? 600 : 400}}>{r}</span>
+                                            {isSelected && <span style={{color: 'var(--primary)'}}>✓</span>}
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                </Modal>
+            )}
+
+            {kickConfirm && (
+                <Modal 
+                    isOpen={true} 
+                    onClose={() => setKickConfirm(null)} 
+                    title={<span style={{color: 'var(--danger)'}}>Изгнание из клана</span>}
+                    maxWidth="400px"
+                    footer={
+                        <div style={{display: 'flex', gap: 8, justifyContent: 'flex-end'}}>
+                            <button className="btn secondary" onClick={() => setKickConfirm(null)}
+                                    disabled={isKicking}>Отмена
+                            </button>
+                            <button className="btn" 
+                                    style={{background: 'var(--danger)', color: '#fff'}}
+                                    disabled={isKicking} 
+                                    onClick={async () => {
+                                setIsKicking(true);
+                                try {
+                                    await kickMember(kickConfirm.id);
+                                    setRoster(prev => prev.filter(m => m.id !== kickConfirm.id));
+                                    setKickConfirm(null);
+                                } catch (e: any) {
+                                    console.error(e);
+                                    notify('Ошибка при исключении: ' + (e.message || 'Unknown error'), 'error');
+                                } finally {
+                                    setIsKicking(false);
+                                }
+                            }}>{isKicking ? 'Исключение...' : 'Исключить'}</button>
+                        </div>
+                    }
+                >
+                    <div>
+                        Вы уверены, что хотите исключить персонажа <b>{kickConfirm.name}</b> из клана?
                     </div>
-                </div>
+                </Modal>
+            )}
+
+            {editCharModal && (
+                <CharacterFormModal
+                    character={editCharModal}
+                    onClose={() => setEditCharModal(null)}
+                    onSave={() => {
+                        getClanRoster().then(setRoster);
+                    }}
+                />
+            )}
+
+            {historyModal && (
+                <CharacterHistoryModal
+                    characterId={historyModal.id}
+                    characterName={historyModal.name}
+                    onClose={() => setHistoryModal(null)}
+                />
             )}
         </div>
     );

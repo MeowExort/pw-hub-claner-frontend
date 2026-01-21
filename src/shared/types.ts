@@ -17,7 +17,6 @@ export interface Character {
     class: CharacterClass;
     pwobsLink: string;
     gameCharId?: string;
-    level: number; // Not explicitly asked but good to keep, maybe derived or just default 1
 
     // Stats
     minAttack: number;
@@ -256,3 +255,27 @@ export interface WeeklyStats {
     khValor: number;
     totalValor: number;
 }
+
+export const CHARACTER_STAT_LABELS: Record<string, string> = {
+    name: 'Имя',
+    server: 'Сервер',
+    class: 'Класс',
+    pwobsLink: 'Ссылка PwObs',
+    minAttack: 'Мин. атака',
+    maxAttack: 'Макс. атака',
+    critChance: 'Шанс крита',
+    critDamage: 'Крит. урон',
+    spirit: 'Боевой дух',
+    physPenetration: 'Физ. пробив',
+    magPenetration: 'Маг. пробив',
+    levelBonus: 'Бонус к уровню',
+    chanting: 'Пение',
+    atkPerSec: 'Аспд',
+    attackLevel: 'ПА',
+    health: 'Здоровье',
+    physDef: 'Физ. защита',
+    magDef: 'Маг. защита',
+    defenseLevel: 'ПЗ',
+    physReduction: 'УФУ',
+    magReduction: 'УМУ',
+};

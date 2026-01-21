@@ -28,6 +28,10 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
 
   th, td {
     border: 1px solid var(--border);
@@ -48,6 +52,29 @@
   tr:hover {
     background-color: rgba(255, 255, 255, 0.05);
   }
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-fast);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text);
+
+    .sortIcon {
+      opacity: 1;
+    }
+  }
+}
+
+.sortIcon {
+  margin-left: 6px;
+  font-size: 0.85em;
+  opacity: 0.4;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .charName {
