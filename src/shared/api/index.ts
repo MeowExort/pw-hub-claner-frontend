@@ -305,6 +305,14 @@ export const clanApi = {
         return handleResponse(res);
     },
 
+    getMemberStats: async (clanId: string, memberId: string): Promise<WeeklyStats> => {
+        const res = await fetch(`${API_URL}/clans/${clanId}/members/${memberId}/stats`, {
+            method: 'GET',
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+
     updateWeeklySummary: async (id: string, week: string, payload: any): Promise<WeeklyStats[]> => {
         const res = await fetch(`${API_URL}/clans/${id}/summary?week=${week}`, {
             method: 'PUT',
@@ -360,6 +368,14 @@ export const eventsApi = {
         const res = await fetch(`${API_URL}/events/${id}`, {
             method: 'DELETE',
             headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    submitFeedback: async (eventId: string, squadId: string | 'ALL', attendanceData: { characterId: string, attended: boolean, isReplacement?: boolean }[]) => {
+        const res = await fetch(`${API_URL}/events/${eventId}/feedback`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ squadId, attendanceData })
         });
         return handleResponse(res);
     }

@@ -28,10 +28,11 @@ export default function EventRosterViewerModal({eventId, onClose}: { eventId: st
 
     // Filter squads to show only mine
     const displayedSquads = useMemo(() => {
-        const myId = user?.mainCharacterId;
-        if (!myId) return [];
-        return localSquads.filter(s => s.members.includes(myId));
-    }, [localSquads, user?.mainCharacterId]);
+        const myIds = user?.characters?.map(c => c.id) || [];
+        if (myIds.length === 0) return [];
+        return localSquads.filter(s => s.members.some(m => myIds.includes(m)));
+    }, [localSquads, user?.characters]);
+    console.log(displayedSquads);
 
     // Socket connection (Read Only)
     useEffect(() => {
@@ -73,7 +74,7 @@ export default function EventRosterViewerModal({eventId, onClose}: { eventId: st
                 className="modal"
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    width: '800px',
+                    width: '500px',
                     height: 'auto',
                     maxHeight: '95vh',
                     maxWidth: '95vw',
@@ -86,7 +87,7 @@ export default function EventRosterViewerModal({eventId, onClose}: { eventId: st
             >
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
                     <div style={{fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center'}}>
-                        {displayedSquads.length > 0 ? `Ваш отряд — ${ev.name}` : `Состав отрядов — ${ev.name}`}
+                        Ваш отряд — {ev.name}
                         {!isSynced && <span style={{
                             fontSize: '0.8rem',
                             color: '#888',
@@ -102,8 +103,10 @@ export default function EventRosterViewerModal({eventId, onClose}: { eventId: st
                     style={{flex: 1, overflow: 'hidden'}}
                 >
                     {displayedSquads.length === 0 ? (
-                        <div className="card" style={{padding: 32, textAlign: 'center', color: 'var(--muted)'}}>
-                            {localSquads.length === 0 ? 'Отряды еще не сформированы' : 'Вы не состоите в отряде'}
+                        <div className="card" style={{padding: 32, textAlign: 'center', color: 'var(--muted)', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                            {localSquads.length === 0 
+                                ? 'Отряды еще не сформированы' 
+                                : 'Ваши персонажи не найдены в составе сформированных отрядов. Если вы были в донаборе, обратитесь к ПЛу для подтверждения участия.'}
                         </div>
                     ) : (
                         <div style={{

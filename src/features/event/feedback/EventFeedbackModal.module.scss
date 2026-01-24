@@ -1,0 +1,127 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.memberList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.memberRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-paper);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.memberInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.memberName {
+    font-weight: 500;
+}
+
+.replacementLabel {
+    font-size: 0.75rem;
+    color: var(--primary);
+    margin-left: 6px;
+    font-weight: normal;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.statusBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 1rem;
+
+    &:hover {
+        border-color: var(--primary);
+    }
+}
+
+.activeGreen {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.activeRed {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+.addSection {
+    margin-top: 8px;
+}
+
+.searchBox {
+    position: relative;
+}
+
+.searchResults {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    margin-bottom: 8px;
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.searchItem {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.2s;
+
+    &:hover {
+        background: var(--bg);
+    }
+}
+
+.noResults {
+    padding: 12px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+}

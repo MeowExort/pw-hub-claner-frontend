@@ -5,11 +5,12 @@ import {startOfIsoWeek, getStartOfWeekFromIso} from '@/shared/lib/date';
 import type {ClanEvent, CharacterClass} from '@/shared/types';
 import s from '@/app/styles/Dashboard.module.scss';
 import EventRosterModal from '@/features/event/roster/EventRosterModal';
+import EventRosterViewerModal from '@/features/event/roster/EventRosterViewerModal';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 
 export default function MyActivity() {
     const {data, week} = useMyActivity();
-    const {clan} = useAppStore();
+    const {clan, hasPermission} = useAppStore();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [rosterFor, setRosterFor] = useState<string | null>(null);
 
@@ -197,7 +198,11 @@ export default function MyActivity() {
                     </div>
                 </>
             )}
-            {rosterFor && <EventRosterModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>}
+            {rosterFor && (hasPermission('CAN_MANAGE_SQUADS') ? (
+                <EventRosterModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>
+            ) : (
+                <EventRosterViewerModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>
+            ))}
         </section>
     );
 }
@@ -290,8 +295,10 @@ export function EventSquadInfo({event, myCharId, onOpenRoster}: {
     myCharId?: string;
     onOpenRoster: (id: string) => void
 }) {
-    const {resolveCharacterNames} = useAppStore();
+    const {resolveCharacterNames, hasPermission} = useAppStore();
     const [leaderInfo, setLeaderInfo] = useState<{ name: string; class: CharacterClass } | null>(null);
+
+    const canManage = hasPermission('CAN_MANAGE_SQUADS');
 
     const mySquad = useMemo(() => {
         if (!myCharId || !event?.squads) return null;
@@ -312,6 +319,7 @@ export function EventSquadInfo({event, myCharId, onOpenRoster}: {
     if (!event?.squads?.length) return null;
 
     if (!mySquad) {
+        if (!canManage) return null;
         return (
             <div style={{marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)'}}>
                 <button className="btn secondary small" onClick={() => onOpenRoster(event!.id)}>Ваш отряд</button>

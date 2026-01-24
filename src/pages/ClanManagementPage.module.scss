@@ -201,11 +201,22 @@
 
 .cardStats {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   margin-top: auto;
   padding-top: 8px;
   border-top: 1px solid var(--border);
+}
+
+.powerSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.powerLabel {
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .powerValue {
@@ -214,7 +225,126 @@
   font-size: 14px;
 }
 
+.extendedStats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .statTooltipTrigger {
+    flex-grow: 1;
+    display: flex;
+    border-bottom: none;
+    overflow: visible;
+    white-space: normal;
+    max-width: none;
+    cursor: pointer;
+  }
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--muted);
+  width: 55px;
+  flex-shrink: 0;
+}
+
+.statBarWrap {
+  width: 100%;
+  flex-grow: 1;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.statBar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.statValue {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
 .levelLabel {
   font-size: 12px;
   color: var(--muted);
+}
+
+.statsTooltip {
+  min-width: 200px;
+  padding: 8px;
+}
+
+.tooltipTitle {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltipList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tooltipItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  gap: 12px;
+}
+
+.itemName {
+  color: #ccc;
+  flex-grow: 1;
+}
+
+.itemDate {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.itemVal {
+  font-size: 11px;
+  color: var(--warning);
+}
+
+.itemStatus {
+  font-weight: 700;
+  width: 14px;
+  text-align: right;
+
+  &.success {
+    color: var(--success);
+  }
+
+  &.danger {
+    color: var(--danger);
+  }
+}
+
+.emptyMsg {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
 }

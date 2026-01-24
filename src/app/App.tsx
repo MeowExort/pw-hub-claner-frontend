@@ -23,6 +23,8 @@ import PopulateDbPage from '@/pages/PopulateDbPage';
 import styles from './styles/App.module.scss';
 import Header from '@/widgets/layout/Header';
 import MainMenu from '@/widgets/layout/MainMenu';
+import EventFeedbackModal from '@/features/event/feedback/EventFeedbackModal';
+import { SquadFeedbackMonitorModal } from '@/features/event/feedback/SquadFeedbackMonitorModal';
 
 function ProtectedRoute({children}: { children: React.ReactNode }) {
     const {user, loading} = useAuth();
@@ -69,10 +71,35 @@ function RootRedirector() {
 
 function Shell() {
     const {user} = useAuth();
-    const {clan} = useAppStore(); // To show menu only if clan exists
+    const {clan, events, pendingFeedbackEvents, hasPermission} = useAppStore(); // To show menu only if clan exists
+    const [feedbackFor, setFeedbackFor] = React.useState<{ eventId: string, squadId: string } | null>(null);
+
+    const nextFeedbackEvent = pendingFeedbackEvents[0];
+    const isAdmin = hasPermission('CAN_EDIT_EVENTS');
 
     return (
         <div className={styles.appRoot}>
+            {nextFeedbackEvent && (
+                isAdmin ? (
+                    <SquadFeedbackMonitorModal 
+                        event={nextFeedbackEvent} 
+                        onSelectSquad={(squadId) => setFeedbackFor({ eventId: nextFeedbackEvent.id, squadId })}
+                    />
+                ) : (
+                    <EventFeedbackModal event={nextFeedbackEvent} />
+                )
+            )}
+            {feedbackFor && (() => {
+                const ev = (isAdmin ? events : pendingFeedbackEvents).find(e => e.id === feedbackFor.eventId);
+                if (!ev) return null;
+                return (
+                    <EventFeedbackModal 
+                        event={ev} 
+                        overrideSquadId={feedbackFor.squadId}
+                        onClose={() => setFeedbackFor(null)}
+                    />
+                );
+            })()}
             <header className={styles.topBar}>
                 <div className={styles.container}>
                     <Header/>

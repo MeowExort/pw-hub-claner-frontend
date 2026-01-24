@@ -7,9 +7,11 @@ import {useAppStore} from '@/shared/model/AppStore';
 import {useAuth} from '@/app/providers/AuthContext';
 import {useToast} from '@/app/providers/ToastContext';
 import type {Character, CharacterClass, ClanApplication, ClanMember} from '@/shared/types';
-import {calculatePowerDetails} from '@/shared/lib/power';
+import {clanApi, eventsApi, userApi} from '@/shared/api';
 import {formatNumber} from '@/shared/lib/number';
+import {calculatePowerDetails} from '@/shared/lib/power';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
+import {Tooltip} from '@/shared/ui/Tooltip/Tooltip';
 import CharacterTooltip from '@/shared/ui/CharacterTooltip/CharacterTooltip';
 import CharacterFormModal from '@/features/settings/character/CharacterFormModal';
 import CharacterHistoryModal from '@/features/settings/character/CharacterHistoryModal';
@@ -47,12 +49,18 @@ export default function ClanManagementPage() {
         resolveCharacterNames,
         hasPermission,
         changeMemberRole,
-        kickMember
+        kickMember,
+        events,
+        historyEvents,
+        loadMoreHistory,
+        hasMoreHistory,
+        loadingHistory
     } = useAppStore();
     const navigate = useNavigate();
     const [roster, setRoster] = useState<RosterItem[]>([]);
     const [applications, setApplications] = useState<ClanApplication[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingAllHistory, setLoadingAllHistory] = useState(false);
     const [filterClass, setFilterClass] = useState<CharacterClass | 'ALL'>('ALL');
     const [searchName, setSearchName] = useState('');
     const [sortBy, setSortBy] = useState<'POWER_DESC' | 'POWER_ASC' | 'NAME_DESC' | 'NAME_ASC' | 'ROLE_DESC' | 'ROLE_ASC'>('POWER_DESC');
@@ -90,6 +98,30 @@ export default function ClanManagementPage() {
                 })
                 .finally(() => setLoading(false));
         }
+    }, [clan]);
+
+    useEffect(() => {
+        if (!loading && hasMoreHistory && !loadingHistory) {
+            setLoadingAllHistory(true);
+            loadMoreHistory();
+        } else if (!hasMoreHistory) {
+            setLoadingAllHistory(false);
+        }
+    }, [loading, hasMoreHistory, loadingHistory, loadMoreHistory]);
+
+    const allEvents = useMemo(() => [...events, ...historyEvents], [events, historyEvents]);
+
+    const weeklyStats = useRef<Record<string, any>>({});
+    useEffect(() => {
+        if (!clan) return;
+        // Fetch all members' stats for the current week to calculate PvE activity
+        clanApi.getWeeklySummary(clan.id, clan.weekIso || '').then(data => {
+            const map: Record<string, any> = {};
+            data.forEach(s => map[s.characterId] = s);
+            weeklyStats.current = map;
+            // Force re-render to show stats
+            setRoster(prev => [...prev]);
+        }).catch(console.error);
     }, [clan]);
 
     const handleProcess = async (id: string, decision: 'APPROVE' | 'REJECT') => {
@@ -296,13 +328,26 @@ export default function ClanManagementPage() {
                 </div>
             </div>
 
-            {loading ? (
-                <div style={{textAlign: 'center', padding: 20}}>Загрузка состава...</div>
+            {loading || loadingAllHistory ? (
+                <div style={{textAlign: 'center', padding: 20}}>Загрузка состава и статистики...</div>
             ) : (
                 <div className={s.rosterGrid}>
                     {filtered.map(char => {
                         const details = calculatePowerDetails(char);
                         const canEditThisRole = canManageRoles && getRoleLevel(char.role) < myLevel;
+
+                        // Stats calculation
+                        const attendanceRate = char.attendanceRate ?? 100;
+                        const pveRate = char.pveActivity;
+
+                        const attendanceDetails = char.activityDetails?.attendance || [];
+                        const pveDetails = char.activityDetails?.pve;
+
+                        const getRateColor = (rate: number) => {
+                            if (rate >= 80) return 'var(--success)';
+                            if (rate >= 50) return 'var(--warning)';
+                            return 'var(--danger)';
+                        };
 
                         return (
                             <CharacterTooltip key={char.id} character={char}>
@@ -374,7 +419,98 @@ export default function ClanManagementPage() {
                                     </div>
 
                                     <div className={s.cardStats}>
-                                        <span className={s.powerValue}>{formatNumber(details.total)}</span>
+                                        <div className={s.powerSection}>
+                                            <span className={s.powerLabel}>Сила:</span>
+                                            <span className={s.powerValue}>{formatNumber(details.total)}</span>
+                                        </div>
+                                        
+                                        <div className={s.extendedStats}>
+                                            <div className={s.statItem}>
+                                                <div className={s.statLabel}>События:</div>
+                                                <Tooltip 
+                                                    className={s.statTooltipTrigger}
+                                                    content={
+                                                    <div className={s.statsTooltip}>
+                                                        <div className={s.tooltipTitle}>События за месяц</div>
+                                                        {attendanceDetails.length > 0 ? (
+                                                            <div className={s.tooltipList}>
+                                                                {attendanceDetails.map((a, idx) => (
+                                                                    <div key={idx} className={s.tooltipItem}>
+                                                                        <span className={s.itemName}>{a.eventName}</span>
+                                                                        <span className={s.itemDate}>{new Date(a.date).toLocaleDateString()}</span>
+                                                                        <span className={`${s.itemStatus} ${a.attended ? s.success : s.danger}`}>
+                                                                            {a.attended ? '✓' : '✕'}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className={s.emptyMsg}>Нет событий в этом месяце</div>
+                                                        )}
+                                                    </div>
+                                                }>
+                                                    <div className={s.statBarWrap}>
+                                                        <div className={s.statBar} style={{
+                                                            width: `${attendanceRate}%`,
+                                                            background: getRateColor(attendanceRate)
+                                                        }} />
+                                                        <span className={s.statValue}>{Math.round(attendanceRate)}%</span>
+                                                    </div>
+                                                </Tooltip>
+                                            </div>
+                                            {pveRate !== undefined && pveRate !== null && (
+                                                <div className={s.statItem}>
+                                                    <div className={s.statLabel}>ПвЕ:</div>
+                                                    <Tooltip 
+                                                        className={s.statTooltipTrigger}
+                                                        content={
+                                                        <div className={s.statsTooltip}>
+                                                            <div className={s.tooltipTitle}>Детали ПвЕ (неделя)</div>
+                                                            {pveDetails ? (
+                                                                <div className={s.tooltipList}>
+                                                                    {pveDetails.kh.map((k, idx) => (
+                                                                        <div key={idx} className={s.tooltipItem}>
+                                                                            <span className={s.itemName}>КХ: Этап {k.stage}</span>
+                                                                            <span className={`${s.itemStatus} ${k.attended ? s.success : s.danger}`} style={{ width: 'auto' }}>
+                                                                                {k.attended ? 'Выполнено' : 'Не выполнено'}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
+                                                                    {pveDetails.rhythm && (
+                                                                        <div className={s.tooltipItem}>
+                                                                            <span className={s.itemName}>Ритм</span>
+                                                                            <span className={s.itemVal}>{pveDetails.rhythm.valor}/14</span>
+                                                                            <span className={`${s.itemStatus} ${pveDetails.rhythm.attended ? s.success : s.danger}`} style={{ width: 'auto' }}>
+                                                                                {pveDetails.rhythm.attended ? 'Выполнено' : 'Не выполнено'}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                    {pveDetails.zu && (
+                                                                        <div className={s.tooltipItem}>
+                                                                            <span className={s.itemName}>ЗУ</span>
+                                                                            <span className={s.itemVal}>{pveDetails.zu.circles}/{pveDetails.zu.required} кр.</span>
+                                                                            <span className={`${s.itemStatus} ${pveDetails.zu.circles >= pveDetails.zu.required ? s.success : s.danger}`} style={{ width: 'auto' }}>
+                                                                                {pveDetails.zu.circles >= pveDetails.zu.required ? 'Выполнено' : 'Не выполнено'}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className={s.emptyMsg}>Нет данных за текущую неделю</div>
+                                                            )}
+                                                        </div>
+                                                    }>
+                                                        <div className={s.statBarWrap}>
+                                                            <div className={s.statBar} style={{
+                                                                width: `${pveRate}%`,
+                                                                background: getRateColor(pveRate)
+                                                            }} />
+                                                            <span className={s.statValue}>{Math.round(pveRate)}%</span>
+                                                        </div>
+                                                    </Tooltip>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </CharacterTooltip>

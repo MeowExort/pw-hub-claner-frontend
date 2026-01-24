@@ -59,6 +59,20 @@ export interface ClanMember {
     class?: CharacterClass;
     role: ClanRole;
     joinDate: string; // ISO
+    attendanceRate?: number;
+    pveActivity?: number;
+    activityDetails?: {
+        attendance: {
+            eventName: string;
+            date: string;
+            attended: boolean;
+        }[];
+        pve: {
+            kh: { stage: number | string; attended: boolean }[];
+            rhythm: { attended: boolean; valor: number } | null;
+            zu: { circles: number; required: number } | null;
+        } | null;
+    };
 }
 
 export interface RolePermissions {
@@ -151,6 +165,7 @@ export interface EventParticipant {
     characterId: string;
     status: 'GOING' | 'NOT_GOING' | 'UNDECIDED';
     attendance?: boolean;
+    isReplacement?: boolean;
     valor?: number;
 }
 
@@ -159,6 +174,7 @@ export interface Squad {
     name: string;
     leaderId: string; // characterId
     members: string[]; // characterIds
+    feedbackSubmitted?: boolean;
 }
 
 export interface ClanEvent {
@@ -172,6 +188,7 @@ export interface ClanEvent {
     participants: EventParticipant[];
     squads?: Squad[]; // JSON shows it, but might be missing
     status: EventStatus;
+    feedbackSubmitted?: boolean;
     // Мок-флаг загрузки отчёта для событий, где это применимо (например, RHYTHM)
     reportUploaded?: boolean;
     // PVP-specific fields

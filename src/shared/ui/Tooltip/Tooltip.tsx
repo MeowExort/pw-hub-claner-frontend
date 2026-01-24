@@ -39,6 +39,7 @@ export const Tooltip = ({content, children, className}: TooltipProps) => {
                 className={`${s.trigger} ${className || ''}`}
                 tabIndex={0}
                 aria-haspopup="true"
+                onClick={(e) => e.stopPropagation()}
             >
                 {children}
             </div>

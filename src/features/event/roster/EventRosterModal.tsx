@@ -20,6 +20,10 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
     const isPast = ev ? new Date(ev.date) < new Date() : false;
     const canEdit = hasPermission('CAN_MANAGE_SQUADS') && !isPast;
 
+    if (!hasPermission('CAN_MANAGE_SQUADS')) {
+        return null;
+    }
+
     const [rosterMap, setRosterMap] = useState<Record<string, Character & ClanMember>>({});
     const [loadingRoster, setLoadingRoster] = useState(false);
     const [isSynced, setIsSynced] = useState(false);
@@ -104,7 +108,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [contextMenu]);
+    }, [contextMenu, onClose]);
 
     const [includeAllRoster, setIncludeAllRoster] = useState(false);
 
@@ -247,7 +251,6 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
         setContextMenu(null);
     };
 
-    const isMySquadView = !hasPermission('CAN_MANAGE_SQUADS') && localSquads.length > 0;
 
     const copySquad = (s: Squad) => {
         const memberNames = s.members
@@ -262,10 +265,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
 
     const myCharacterIds = useMemo(() => user?.characters?.map(c => c.id) || [], [user]);
 
-    const displayedSquads = useMemo(() => {
-        if (!isMySquadView) return localSquads;
-        return localSquads.filter(s => s.members.some(m => myCharacterIds.includes(m)));
-    }, [isMySquadView, localSquads, myCharacterIds]);
+    const displayedSquads = localSquads;
 
     const squadStats = useMemo(() => {
         return localSquads.map(s => {
@@ -312,10 +312,9 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                     setContextMenu(null);
                 }}
                 style={{
-                    width: isMySquadView ? '500px' : '98vw',
-                    height: isMySquadView ? 'auto' : '95vh',
+                    width: '98vw',
+                    height: '95vh',
                     maxHeight: '95vh',
-                    maxWidth: isMySquadView ? '90vw' : 'none',
                     display: 'flex',
                     flexDirection: 'column',
                     background: '#1a1b26',
@@ -325,7 +324,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
             >
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
                     <div style={{fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center'}}>
-                        {isMySquadView ? `Ваш отряд — ${ev.name}` : `Роспись отрядов — ${ev.name}`}
+                        Роспись отрядов — {ev.name}
                         {!isSynced && <span style={{
                             fontSize: '0.8rem',
                             color: '#888',
@@ -358,10 +357,10 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                 <div
                     className="grid"
                     style={{
-                        gridTemplateColumns: canEdit ? '300px 1fr' : '1fr',
+                        gridTemplateColumns: '300px 1fr',
                         gap: 16,
                         flex: 1,
-                        overflow: isMySquadView ? 'visible' : 'hidden'
+                        overflow: 'hidden'
                     }}
                     onDragOver={onDragOver}
                     onDrop={(e) => {
@@ -501,15 +500,15 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                         </div>
                     )}
 
-                    {(!canEdit && !hasPermission('CAN_MANAGE_SQUADS') && displayedSquads.length === 0) ? (
-                        <div className="card" style={{padding: 32, textAlign: 'center', color: 'var(--muted)'}}>
-                            Вас еще не расписали в отряд
+                    {displayedSquads.length === 0 ? (
+                        <div className="card" style={{padding: 32, textAlign: 'center', color: 'var(--muted)', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                            Отряды еще не сформированы
                         </div>
                     ) : (
                         <div style={{
                             overflowY: 'auto',
                             display: 'grid',
-                            gridTemplateColumns: isMySquadView ? '1fr' : 'repeat(auto-fill, minmax(230px, 1fr))',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
                             gap: 12,
                             alignContent: 'flex-start',
                             padding: 4

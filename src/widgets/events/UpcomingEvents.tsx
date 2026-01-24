@@ -3,6 +3,7 @@ import {useAppStore} from '@/shared/model/AppStore';
 import {useAuth} from '@/app/providers/AuthContext';
 import s from '@/app/styles/Dashboard.module.scss';
 import EventRosterModal from '@/features/event/roster/EventRosterModal';
+import EventRosterViewerModal from '@/features/event/roster/EventRosterViewerModal';
 
 export default function UpcomingEvents() {
     const {events, rsvp, hasPermission} = useAppStore();
@@ -90,21 +91,28 @@ export default function UpcomingEvents() {
                                             <div style={{fontSize: 12, color: 'var(--muted)'}}>Автоматический учёт</div>
                                         ) : (
                                             <>
-                                                {canManage ? (
-                                                    <button className="btn"
-                                                            onClick={() => setRosterFor(e.id)}>Роспись</button>
-                                                ) : (
-                                                    (e.squads && e.squads.length > 0) ? (
-                                                        <button className="btn secondary"
-                                                                onClick={() => setRosterFor(e.id)}>Ваш отряд</button>
-                                                    ) : (
-                                                        <span style={{
-                                                            fontSize: 12,
-                                                            color: 'var(--muted)',
-                                                            marginRight: 8
-                                                        }}>Вы еще не расписаны</span>
-                                                    )
-                                                )}
+                                                {(() => {
+                                                    const isMember = activeCharId && e.squads?.some(s => s.members.includes(activeCharId));
+                                                    if (canManage) {
+                                                        return (
+                                                            <button className="btn"
+                                                                    onClick={() => setRosterFor(e.id)}>Роспись</button>
+                                                        );
+                                                    } else if (isMember) {
+                                                        return (
+                                                            <button className="btn secondary"
+                                                                    onClick={() => setRosterFor(e.id)}>Ваш отряд</button>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <span style={{
+                                                                fontSize: 12,
+                                                                color: 'var(--muted)',
+                                                                marginRight: 8
+                                                            }}>Вы еще не расписаны</span>
+                                                        );
+                                                    }
+                                                })()}
                                                 {activeCharId && (() => {
                                                     const st = e.participants.find(p => p.characterId === activeCharId)?.status;
                                                     return (
@@ -148,7 +156,11 @@ export default function UpcomingEvents() {
                 </div>
             )}
 
-            {rosterFor && <EventRosterModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>}
+            {rosterFor && (canManage ? (
+                <EventRosterModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>
+            ) : (
+                <EventRosterViewerModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>
+            ))}
         </section>
     );
 }

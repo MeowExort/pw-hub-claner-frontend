@@ -4,13 +4,18 @@ import {useAppStore} from '@/shared/model/AppStore';
 import {useAuth} from '@/app/providers/AuthContext';
 import CustomEventModal from '@/features/event/create/CustomEventModal';
 import EventRosterModal from '@/features/event/roster/EventRosterModal';
-import type {ClanEvent} from '@/shared/types';
+import EventRosterViewerModal from '@/features/event/roster/EventRosterViewerModal';
+import EventFeedbackModal from '@/features/event/feedback/EventFeedbackModal';
+import { SquadFeedbackMonitorModal } from '@/features/event/feedback/SquadFeedbackMonitorModal';
+import type { ClanEvent } from '@/shared/types';
 
 export default function EventsPage() {
-    const {events, historyEvents, loadingHistory, hasMoreHistory, loadMoreHistory, rsvp, deleteEvent, hasPermission} = useAppStore();
-    const {user} = useAuth();
+    const { events, historyEvents, loadingHistory, hasMoreHistory, loadMoreHistory, rsvp, deleteEvent, hasPermission } = useAppStore();
+    const { user } = useAuth();
     const [showCreate, setShowCreate] = useState(false);
     const [rosterFor, setRosterFor] = useState<string | null>(null);
+    const [monitorFor, setMonitorFor] = useState<string | null>(null);
+    const [feedbackFor, setFeedbackFor] = useState<{ eventId: string, squadId: string } | null>(null);
     const observerTarget = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -93,18 +98,35 @@ export default function EventsPage() {
                 </div>
 
                 <div style={{marginBottom: 12}}>
-                    {!['CLAN_HALL', 'RHYTHM', 'FORBIDDEN_KNOWLEDGE'].includes(e.type) && (
-                        (hasPermission('CAN_MANAGE_SQUADS') || (e.squads && e.squads.length > 0)) ? (
-                            <button className="btn secondary" style={{width: '100%'}}
-                                    onClick={() => setRosterFor(e.id)}>
-                                {hasPermission('CAN_MANAGE_SQUADS') ? 'Роспись отрядов' : 'Ваш отряд'}
-                            </button>
-                        ) : (
+                    {isPast && hasPermission('CAN_EDIT_EVENTS') && (e.squads || []).some(s => !s.feedbackSubmitted) && (
+                        <button 
+                            className="btn" 
+                            style={{width: '100%', marginBottom: 8, background: 'var(--warning)', color: '#000'}}
+                            onClick={() => setMonitorFor(e.id)}
+                        >
+                            ОС от ПЛов
+                        </button>
+                    )}
+                    {!['CLAN_HALL', 'RHYTHM', 'FORBIDDEN_KNOWLEDGE'].includes(e.type) && (() => {
+                        const canManage = hasPermission('CAN_MANAGE_SQUADS');
+                        const isMember = targetCharId && e.squads?.some(s => s.members.includes(targetCharId));
+                        const isParticipant = targetCharId && e.participants?.some(p => p.characterId === targetCharId && p.attendance);
+                        
+                        if (canManage || isMember || isParticipant) {
+                            return (
+                                <button className="btn secondary" style={{width: '100%'}}
+                                        onClick={() => setRosterFor(e.id)}>
+                                    {canManage ? 'Роспись отрядов' : 'Ваш отряд'}
+                                </button>
+                            );
+                        }
+                        
+                        return (
                             <div style={{fontSize: 12, color: 'var(--muted)', textAlign: 'center'}}>
                                 {isPast ? 'Отряды не были сформированы' : 'Вы еще не расписаны'}
                             </div>
-                        )
-                    )}
+                        );
+                    })()}
                 </div>
 
                 {/* RSVP Section */}
@@ -183,7 +205,36 @@ export default function EventsPage() {
             )}
 
             {showCreate && <CustomEventModal onClose={() => setShowCreate(false)}/>}
-            {rosterFor && <EventRosterModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>}
+            {rosterFor && (hasPermission('CAN_MANAGE_SQUADS') ? (
+                <EventRosterModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>
+            ) : (
+                <EventRosterViewerModal eventId={rosterFor} onClose={() => setRosterFor(null)}/>
+            ))}
+            {monitorFor && (() => {
+                const ev = [...events, ...historyEvents].find(e => e.id === monitorFor);
+                if (!ev) return null;
+                return (
+                    <SquadFeedbackMonitorModal 
+                        event={ev} 
+                        onClose={() => setMonitorFor(null)} 
+                        onSelectSquad={(squadId) => {
+                            setFeedbackFor({ eventId: ev.id, squadId });
+                            setMonitorFor(null);
+                        }}
+                    />
+                );
+            })()}
+            {feedbackFor && (() => {
+                const ev = [...events, ...historyEvents].find(e => e.id === feedbackFor.eventId);
+                if (!ev) return null;
+                return (
+                    <EventFeedbackModal 
+                        event={ev} 
+                        overrideSquadId={feedbackFor.squadId}
+                        onClose={() => setFeedbackFor(null)}
+                    />
+                );
+            })()}
         </div>
     );
 }

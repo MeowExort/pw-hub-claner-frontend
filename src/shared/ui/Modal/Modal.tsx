@@ -4,7 +4,7 @@ import s from './Modal.module.scss';
 
 interface ModalProps {
     isOpen: boolean;
-    onClose: () => void;
+    onClose?: () => void;
     title?: ReactNode;
     children: ReactNode;
     footer?: ReactNode;
@@ -26,7 +26,7 @@ export const Modal = ({isOpen, onClose, title, children, footer, maxWidth}: Moda
     if (!isOpen) return null;
 
     return createPortal(
-        <div className={s.backdrop} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+        <div className={s.backdrop} onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
             <div 
                 className={s.modal} 
                 onMouseDown={e => e.stopPropagation()} 
@@ -37,9 +37,11 @@ export const Modal = ({isOpen, onClose, title, children, footer, maxWidth}: Moda
             >
                 <div className={s.header}>
                     {title && <h2 id="modal-title" className={s.title}>{title}</h2>}
-                    <button className={s.closeBtn} onClick={onClose} aria-label="Закрыть">
-                        &times;
-                    </button>
+                    {onClose && (
+                        <button className={s.closeBtn} onClick={onClose} aria-label="Закрыть">
+                            &times;
+                        </button>
+                    )}
                 </div>
                 <div className={s.content}>
                     {children}

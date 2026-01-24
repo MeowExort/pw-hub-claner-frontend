@@ -48,6 +48,8 @@ interface AppStoreValue {
     changeMemberRole: (memberId: string, role: string) => Promise<void>;
     kickMember: (memberId: string) => Promise<void>;
     hasPermission: (permission: string) => boolean;
+    submitEventFeedback: (eventId: string, squadId: string | 'ALL', attendanceData: { characterId: string, attended: boolean, isReplacement?: boolean }[]) => Promise<void>;
+    pendingFeedbackEvents: ClanEvent[];
 }
 
 const AppStore = createContext<AppStoreValue | undefined>(undefined);
@@ -303,6 +305,32 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         refreshAll().catch(err => console.error('Background refresh failed', err));
     }, [clan, notify, refreshAll]);
 
+    const submitEventFeedback: AppStoreValue['submitEventFeedback'] = useCallback(async (eventId, squadId, attendanceData) => {
+        await eventsApi.submitFeedback(eventId, squadId, attendanceData);
+        notify('Обратная связь сохранена', 'success');
+        await refreshAll();
+    }, [notify, refreshAll]);
+
+    const pendingFeedbackEvents = useMemo(() => {
+        if (!user || !events.length) return [];
+        const now = new Date();
+        const isAdmin = hasPermission('CAN_EDIT_EVENTS');
+        
+        return events.filter(e => {
+            if (new Date(e.date) > now) return false;
+            if (e.feedbackSubmitted) return false;
+            
+            // If user has CAN_EDIT_EVENTS, we show them all events that need any feedback
+            if (isAdmin) {
+                return (e.squads || []).some(s => !s.feedbackSubmitted);
+            }
+
+            // If user is a PL in any squad of this event and that squad is not submitted
+            const isPL = e.squads?.some(s => s.leaderId === user.mainCharacterId && !s.feedbackSubmitted);
+            return !!isPL;
+        }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, [user, events, hasPermission]);
+
     const loadMoreHistory: AppStoreValue['loadMoreHistory'] = useCallback(async () => {
         if (loadingHistory || !hasMoreHistory) return;
         setLoadingHistory(true);
@@ -351,10 +379,12 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         processApplication,
         changeMemberRole,
         kickMember,
-        hasPermission
+        hasPermission,
+        submitEventFeedback,
+        pendingFeedbackEvents
     }), [
         clan, events, historyEvents, loading, loadingHistory, hasMoreHistory, refreshAll, loadMoreHistory, createClan, updateClanSettings, createEvent, rsvp, setSquads, deleteEvent, updatePermissions, setRhythmReportUploadedThisWeek, setForbiddenReportUploadedThisWeek, resolveCharacterNames, getClanRoster,
-        applyToClan, leaveClan, listClans, getApplications, processApplication, changeMemberRole, kickMember, permissions
+        applyToClan, leaveClan, listClans, getApplications, processApplication, changeMemberRole, kickMember, permissions, submitEventFeedback, pendingFeedbackEvents
     ]);
 
     return <AppStore.Provider value={value}>{children}</AppStore.Provider>;
