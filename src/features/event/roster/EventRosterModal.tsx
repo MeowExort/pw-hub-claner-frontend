@@ -128,6 +128,15 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
         const unassigned = candidates.filter(id => !assigned.has(id));
 
         return unassigned.sort((a, b) => {
+            const charA = rosterMap[a];
+            const charB = rosterMap[b];
+
+            // 1. Приоритет для ПЛов (роль 'PL')
+            const isPLA = charA?.role === 'PL' ? 0 : 1;
+            const isPLB = charB?.role === 'PL' ? 0 : 1;
+            if (isPLA !== isPLB) return isPLA - isPLB;
+
+            // 2. Статус участия (score)
             const sA = participantMap.get(a);
             const sB = participantMap.get(b);
 
@@ -142,7 +151,13 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
             const scB = score(sB);
             if (scA !== scB) return scA - scB;
 
-            return (rosterMap[a]?.name || '').localeCompare(rosterMap[b]?.name || '');
+            // 3. Группировка по классу
+            const classA = charA?.class || '';
+            const classB = charB?.class || '';
+            if (classA !== classB) return classA.localeCompare(classB);
+
+            // 4. Сортировка по имени
+            return (charA?.name || '').localeCompare(charB?.name || '');
         });
     }, [ev, localSquads, rosterMap, includeAllRoster]);
 
@@ -450,6 +465,8 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                     }
 
                                     const charData = rosterMap[id];
+                                    const isPL = charData?.role === 'PL';
+
                                     const content = (
                                         <div
                                             className="card"
@@ -469,6 +486,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                             }}
                                         >
                                             <div style={{display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden'}}>
+                                                {isPL && <span title="Лидер отряда (ПЛ)">👑</span>}
                                                 {statusIcon && (
                                                     <div style={{
                                                         width: 14,
@@ -478,6 +496,7 @@ export default function EventRosterModal({eventId, onClose}: { eventId: string; 
                                                 )}
                                                 <ClassIcon cls={charData?.class} size={14}/>
                                                 <span style={{
+                                                    fontWeight: isPL ? 600 : 400,
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap'

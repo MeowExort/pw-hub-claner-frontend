@@ -50,6 +50,7 @@ interface AppStoreValue {
     hasPermission: (permission: string) => boolean;
     submitEventFeedback: (eventId: string, squadId: string | 'ALL', attendanceData: { characterId: string, attended: boolean, isReplacement?: boolean }[]) => Promise<void>;
     pendingFeedbackEvents: ClanEvent[];
+    getEventById: (id: string) => Promise<ClanEvent | undefined>;
 }
 
 const AppStore = createContext<AppStoreValue | undefined>(undefined);
@@ -352,6 +353,25 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         }
     }, [historyEvents.length, loadingHistory, hasMoreHistory]);
 
+    const getEventById: AppStoreValue['getEventById'] = useCallback(async (id: string) => {
+        const found = events.find(e => e.id === id) || historyEvents.find(e => e.id === id);
+        if (found) return found;
+
+        try {
+            const ev = await eventsApi.getEvent(id);
+            if (ev) {
+                setHistoryEvents(prev => {
+                    if (prev.find(e => e.id === id)) return prev;
+                    return [...prev, ev];
+                });
+            }
+            return ev;
+        } catch (e) {
+            console.error('Failed to get event by id', e);
+            return undefined;
+        }
+    }, [events, historyEvents]);
+
     const value = useMemo<AppStoreValue>(() => ({
         clan,
         events,
@@ -381,10 +401,11 @@ export function AppStoreProvider({children}: { children: React.ReactNode }) {
         kickMember,
         hasPermission,
         submitEventFeedback,
-        pendingFeedbackEvents
+        pendingFeedbackEvents,
+        getEventById
     }), [
         clan, events, historyEvents, loading, loadingHistory, hasMoreHistory, refreshAll, loadMoreHistory, createClan, updateClanSettings, createEvent, rsvp, setSquads, deleteEvent, updatePermissions, setRhythmReportUploadedThisWeek, setForbiddenReportUploadedThisWeek, resolveCharacterNames, getClanRoster,
-        applyToClan, leaveClan, listClans, getApplications, processApplication, changeMemberRole, kickMember, permissions, submitEventFeedback, pendingFeedbackEvents
+        applyToClan, leaveClan, listClans, getApplications, processApplication, changeMemberRole, kickMember, permissions, submitEventFeedback, pendingFeedbackEvents, getEventById
     ]);
 
     return <AppStore.Provider value={value}>{children}</AppStore.Provider>;

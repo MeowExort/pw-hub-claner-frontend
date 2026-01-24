@@ -378,6 +378,10 @@ export const eventsApi = {
             body: JSON.stringify({ squadId, attendanceData })
         });
         return handleResponse(res);
+    },
+    getEvent: async (id: string): Promise<ClanEvent> => {
+        const res = await fetch(`${API_URL}/events/${id}`, { headers: getHeaders() });
+        return handleResponse(res);
     }
 };
 

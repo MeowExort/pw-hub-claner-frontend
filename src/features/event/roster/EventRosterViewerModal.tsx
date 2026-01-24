@@ -1,18 +1,26 @@
 import React, {useMemo, useState, useEffect} from 'react';
 import {useAppStore} from '@/shared/model/AppStore';
-import type {Squad, Character} from '@/shared/types';
+import type {Squad, Character, ClanEvent} from '@/shared/types';
 import CharacterTooltip from '@/shared/ui/CharacterTooltip/CharacterTooltip';
 import {socket} from '@/shared/api/socket';
 import {ClassIcon} from '@/shared/ui/ClassIcon';
 import {useAuth} from '@/app/providers/AuthContext';
 
 export default function EventRosterViewerModal({eventId, onClose}: { eventId: string; onClose: () => void }) {
-    const {events, getClanRoster} = useAppStore();
+    const {getClanRoster, getEventById} = useAppStore();
     const {user} = useAuth();
-    const ev = events.find(e => e.id === eventId);
+    const [ev, setEv] = useState<ClanEvent | null>(null);
+    const [isLoadingEvent, setIsLoadingEvent] = useState(true);
 
     const [rosterMap, setRosterMap] = useState<Record<string, Character>>({});
     const [isSynced, setIsSynced] = useState(false);
+
+    useEffect(() => {
+        setIsLoadingEvent(true);
+        getEventById(eventId).then(e => {
+            if (e) setEv(e);
+        }).finally(() => setIsLoadingEvent(false));
+    }, [eventId, getEventById]);
 
     useEffect(() => {
         getClanRoster().then(roster => {
@@ -22,17 +30,19 @@ export default function EventRosterViewerModal({eventId, onClose}: { eventId: st
         }).catch(console.error);
     }, [getClanRoster]);
 
-    const [localSquads, setLocalSquads] = useState<Squad[]>(() => {
-        return ev?.squads || [];
-    });
+    const [localSquads, setLocalSquads] = useState<Squad[]>([]);
 
+    useEffect(() => {
+        if (ev) {
+            setLocalSquads(ev.squads || []);
+        }
+    }, [ev]);
     // Filter squads to show only mine
     const displayedSquads = useMemo(() => {
         const myIds = user?.characters?.map(c => c.id) || [];
         if (myIds.length === 0) return [];
         return localSquads.filter(s => s.members.some(m => myIds.includes(m)));
     }, [localSquads, user?.characters]);
-    console.log(displayedSquads);
 
     // Socket connection (Read Only)
     useEffect(() => {
@@ -64,6 +74,17 @@ export default function EventRosterViewerModal({eventId, onClose}: { eventId: st
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [onClose]);
+
+    if (isLoadingEvent && !ev) {
+        return (
+            <div className="modal-backdrop" onClick={onClose}
+                 style={{alignItems: 'center', justifyContent: 'center', display: 'flex'}}>
+                <div className="modal" onClick={e => e.stopPropagation()} style={{ padding: '20px' }}>
+                    <div className="text-center">Загрузка данных события...</div>
+                </div>
+            </div>
+        );
+    }
 
     if (!ev) return null;
 
